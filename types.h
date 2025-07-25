@@ -25,12 +25,5 @@ typedef struct {
     int is_on;
 } Valve;
 
-typedef struct {
-    int tank_id;
-    double volume_reading;
-    double temperature_reading;
-    double concentration_reading;
-} Sensors;
-
 
 #endif // TYPES_H

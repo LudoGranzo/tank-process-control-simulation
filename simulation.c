@@ -21,20 +21,31 @@ void update_tank_volume(Tank *tanks, int num_tanks, Valve *valve, double deltaT)
     }
 }
 
-void update_tank_concentration(Tank *tank, Valve *valve, double deltaT) {
-    if (tank == NULL || valve == NULL) {
+void update_tank_concentration(Tank *tanks,int num_tanks, Valve *valve, double deltaT) {
+    if (!valve->is_on) //guarda se la valvola è spenta
         return;
+    Tank *from = NULL;
+    Tank *to = NULL;
+    for(int i = 0; i < num_tanks; i++){         //si cercano i due serbatoi connessi alla valvola: il from e il to
+        if (tanks[i].id == valve->from_tank) 
+            from = &tanks[i];
+        if (tanks[i].id == valve->to_tank)
+            to = &tanks[i];
     }
-    double nuovaConcentrazione = tank->concentration * tank->volume + valve->max_flow * deltaT; // Esempio di incremento
-    if (nuovaConcentrazione <= MIN_CONCENTRATION){
-        nuovaConcentrazione = MIN_CONCENTRATION; // Limita la concentrazione massima o minima
-        valve->is_on = 0; // Spegne la valvola se la concentrazione è fuori dai limiti
-        tank->concentration = nuovaConcentrazione; // Aggiorna la concentrazione del serbatoio
-    } else if (nuovaConcentrazione >= MAX_CONCENTRATION) {
-        valve->is_on = 0; // Mantiene la valvola accesa se la concentrazione è nei limiti
-        tank->concentration = MAX_CONCENTRATION; // Limita la concentrazione massima
-    } else {
-        valve->is_on = 1; // Mantiene la valvola accesa se la concentrazione è nei limiti
-    }
-    tank->concentration = nuovaConcentrazione;
+    if (from == NULL || to == NULL)             //se non si trovano serbatoi collegati si esce dalla funzione
+        return;
+   
+    double volume_in = valve->max_flow * deltaT; //quanto volume arriva in deltaT tempo
+    if (volume_in > from->volume)
+    volume_in = from->volume; 
+    double V_old = to->volume;
+    double V_new = V_old + volume_in - EVAP_COEFF * V_old; //calcolo nuovo volume del serbatoio di destinazione
+    if (V_new <= 0) //se il volume è negativo (non realistico)
+    return;
+    double C_old = to->concentration;
+    double C_in = from->concentration;
+    double C_new = (C_old * V_old + C_in * volume_in) / V_new; //formula miscelazione perfetta
+    to->concentration = C_new;
+    
+
 }

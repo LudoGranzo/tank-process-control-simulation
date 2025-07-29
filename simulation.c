@@ -49,3 +49,40 @@ void update_tank_concentration(Tank *tanks,int num_tanks, Valve *valve, double d
     
 
 }
+
+void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Heater *heaters, int num_heaters, double deltaT) {
+    if (!valve->is_on)
+        return;
+
+    Tank *from = NULL;
+    Tank *to = NULL;
+
+    for (int i = 0; i < num_tanks; i++) {
+        if (tanks[i].id == valve->from_tank) from = &tanks[i];
+        if (tanks[i].id == valve->to_tank) to = &tanks[i];
+    }
+
+    if (from == NULL || to == NULL) return;
+
+    double volume_in = valve->max_flow * deltaT;
+    if (volume_in > from->volume)
+        volume_in = from->volume;
+
+    double V_old = to->volume;
+    double V_new = V_old + volume_in - EVAP_COEFF * V_old;
+    if (V_new <= 0) return;
+
+    double T_old = to->temperature;
+    double T_in = from->temperature;
+    double Q_heat = 0.0;
+
+    for (int i = 0; i < num_heaters; i++) {
+        if (heaters[i].tank_id == to->id && heaters[i].is_on) {
+            Q_heat = heaters[i].power / heaters[i].watt_per_degree;
+            break;
+        }
+    }
+
+    double T_new = (T_old * V_old + T_in * volume_in + Q_heat * deltaT) / V_new;
+    to->temperature = T_new;
+}

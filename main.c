@@ -15,6 +15,9 @@ int main() {
     Valve valve = {VALVE_ID, VALVE_FROM_TANK, VALVE_TO_TANK, VALVE_MAX_FLOW, VALVE_IS_ON}; // Esempio di inizializzazione della valvola
 
     double deltaT = 1.0; // Intervallo di tempo in secondi
+    Heater heater2 = {1, 2, 200, 10, 1}; // acceso
+    Heater heaters[] = {heater2};
+    int num_heaters = sizeof(heaters)/sizeof(heaters[0]);
     printf("Time: 0s\n");
     for (int i = 0; i < num_tanks; i ++){ 
         printf("TANK %d: V= %.2f L, C= %.2f, T= %.2f°C\n", tanks[i].id, tanks[i].volume, tanks[i].concentration, tanks[i].temperature);
@@ -24,6 +27,7 @@ int main() {
         for (int t = 1; tanks[1].volume < TANK_SCOPE2; t += deltaT) {
             update_tank_volume(tanks, num_tanks, &valve, deltaT);
             update_tank_concentration(tanks, num_tanks, &valve, deltaT);
+            update_tank_temperature(tanks, num_tanks, &valve, heaters, num_heaters, deltaT);
             printf("Time: %ds\n", t);
             for (int i =0; i < num_tanks; i++){
             printf("TANK %d: V= %.2f L, C= %.2f, T= %.2f°C\n", tanks[i].id, tanks[i].volume, tanks[i].concentration, tanks[i].temperature);

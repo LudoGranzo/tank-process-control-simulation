@@ -25,5 +25,13 @@ typedef struct {
     int is_on;
 } Valve;
 
+typedef struct {
+    int id;
+    int tank_id;
+    double power;
+    double watt_per_degree;
+    int is_on;
+} Heater;
+
 
 #endif // TYPES_H

@@ -11,7 +11,7 @@
 
 //Valori inziali serbatoio 2
 #define ID2 2
-#define INITIAL_VOLUME2 0.0
+#define INITIAL_VOLUME2 120.0
 #define INITIAL_CONCENTRATION2 0.6
 #define INITIAL_TEMPERATURE2 20.0
 #define CAPACITY2 200.0

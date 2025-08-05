@@ -5,16 +5,17 @@
 #include "types.h"
 #include "constants.h"
     
-void update_tank_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {    
+void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {    
     double volume_scopes[] = {TANK_SCOPE, TANK_SCOPE2}; // Array di volumi obiettivo dei serbatoi 
-    *volume_reached = 1; // Inizialmente si assume che il volume obiettivo sia raggiunto
-    double volume_changes[num_tanks];
+    static int target_reached[2] = {0, 0}; // Array per tracciare se ogni serbatoio ha raggiunto il volume obiettivo
+    *volume_reached = 1; // Inizialmente si assume che il ciclo sia completato
+    
     for (int i = 0; i < num_tanks; i++) {
         double inflow = 0.0;
         double outflow = 0.0;
 
-        // **Caso 1: Riempimento**
-        if (tanks[i].volume < volume_scopes[i]) {
+        // **Caso 1: Riempimento (solo se non ha ancora raggiunto l'obiettivo)**
+        if (tanks[i].volume < volume_scopes[i] && !target_reached[i]) {
             *volume_reached = 0;
             for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in ingresso per riempire il serbatoio
                 if (pumps[p].to_tank ==  tanks[i].id && pumps[p].from_tank < 0){
@@ -33,13 +34,19 @@ void update_tank_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, i
             }
 
             tanks[i].volume += (inflow - outflow) * deltaT - EVAP_COEFF * tanks[i].volume; // Calcola il nuovo volume del serbatoio
-            if (tanks[i].volume > volume_scopes[i]) {
+            if (tanks[i].volume >= volume_scopes[i]) {
                 tanks[i].volume = volume_scopes[i]; // Assicurati che il volume non superi il volume obiettivo
+                target_reached[i] = 1; // Marca che ha raggiunto l'obiettivo
+                for (int p = 0; p < num_pumps; p++) {
+                    if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
+                        pumps[p].is_on = 0; // Spegni la pompa di ingresso
+                    }
+                }
             }
-            // **Caso 2: Scarico**
-        } else if (tanks[i].volume > volume_scopes[i]) {
+        // **Caso 1.5: Volume iniziale superiore all'obiettivo - scarica verso obiettivo**
+        } else if (tanks[i].volume > volume_scopes[i] && !target_reached[i]) {
             *volume_reached = 0;
-            for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in uscita per svuotare il serbatoio
+            for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in uscita per scaricare verso l'obiettivo
                 if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
                     if (!pumps[p].is_on) {
                         pumps[p].is_on = 1;
@@ -55,24 +62,47 @@ void update_tank_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, i
                 }
             }
 
-            tanks[i].volume -= (inflow - outflow) * deltaT - EVAP_COEFF * tanks[i].volume; // Calcola il nuovo volume del serbatoio
-            if (tanks[i].volume < volume_scopes[i]) {
+            tanks[i].volume += (inflow - outflow) * deltaT - EVAP_COEFF * tanks[i].volume; // Calcola il nuovo volume del serbatoio
+            if (tanks[i].volume <= volume_scopes[i]) {
                 tanks[i].volume = volume_scopes[i]; // Assicurati che il volume non scenda sotto il volume obiettivo
+                target_reached[i] = 1; // Marca che ha raggiunto l'obiettivo
+                for (int p = 0; p < num_pumps; p++) {
+                    if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
+                        pumps[p].is_on = 0; // Spegni la pompa di scarico
+                    }
+                }
             }
-        } else {    // **Caso 3: Volume Obiettivo Raggiunto**
-            inflow = 0.0;
-            outflow = 0.0;
+        // **Caso 2: Scarico dopo aver raggiunto l'obiettivo (continua fino a volume 0)**
+        } else if (target_reached[i] && tanks[i].volume > 0) {
+            *volume_reached = 0;
+            for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in uscita per svuotare completamente il serbatoio
+                if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
+                    if (!pumps[p].is_on) {
+                        pumps[p].is_on = 1;
+                    }
+                    outflow += pumps[p].max_flow; // Aggiungi il flusso della pompa di uscita
+                }
+            }
+
+            //Spegni le pompe di ingresso.
             for (int p = 0; p < num_pumps; p++) {
                 if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
                     pumps[p].is_on = 0; // Spegni la pompa di ingresso
                 }
             }
-            for (int p = 0; p < num_pumps; p++) {
-                if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
-                    pumps[p].is_on = 0; // Spegni la pompa di uscita
+
+            tanks[i].volume += (inflow - outflow) * deltaT - EVAP_COEFF * tanks[i].volume; // Calcola il nuovo volume del serbatoio
+            if (tanks[i].volume <= 0) {
+                tanks[i].volume = 0; // Assicurati che il volume non scenda sotto 0
+                for (int p = 0; p < num_pumps; p++) {
+                    if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
+                        pumps[p].is_on = 0; // Spegni la pompa di scarico quando raggiunge 0
+                    }
                 }
             }
         }
+        // **Caso 3: Ciclo completato (volume = 0 dopo aver raggiunto obiettivo)**
+        // Non fa nulla, il serbatoio ha finito il suo ciclo
     }
 }
 
@@ -158,4 +188,28 @@ void print_new_values(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int
     }
         
     printf("\n");
+}
+
+void emptying_tank(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT) {
+   for (int i = 0; i < num_tanks; i++) {
+        int outflow = 0.0;
+        while (tanks[i].volume != 0){
+            for (int p = 0; p < num_pumps; p++) {
+                if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
+                    pumps[p].is_on = 1; // Attiva la pompa di scarico
+                }
+                outflow += pumps[p].max_flow; // Aggiungi il flusso della pompa di uscita
+            }
+            tanks[i].volume += (0 - outflow) * deltaT - EVAP_COEFF * tanks[i].volume; // Calcola il nuovo volume del serbatoio
+        }
+        if (tanks[i].volume < 0) {
+                tanks[i].volume = 0; // Assicurati che il volume non scenda sotto il volume obiettivo
+                for (int p = 0; p < num_pumps; p++) {
+                    if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
+                        pumps[p].is_on = 0; // Spegni la pompa di scarico
+                    }
+                }
+            }
+   }
+   print_new_values(tanks, num_tanks, valve, pumps, num_pumps, 0); // Stampa i valori finali dopo lo svuotamento
 }

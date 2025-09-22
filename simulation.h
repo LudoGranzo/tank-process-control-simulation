@@ -6,7 +6,7 @@
 void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached);
 
 // Funzione per simulare l'aggionramento della concentrazione del serbatoio
-void update_tank_concentration(Tank *tank, int num_tanks, Valve *valve, double deltaT);
+void update_tank_concentration(Tank *tanks, int num_tanks,Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *concentration_reached, int *volume_reached);
 
 //Funzione per simulare l'aggionramento della temperatura del serbatoio
 void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Heater *heaters, int num_heaters, double deltaT);

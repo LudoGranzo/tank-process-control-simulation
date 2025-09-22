@@ -73,7 +73,7 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                 }
             }
         // **Caso 2: Scarico dopo aver raggiunto l'obiettivo (continua fino a volume 0)**
-        } else if (target_reached[i] && tanks[i].volume > 0) {
+        } /*else if (target_reached[i] && tanks[i].volume > 0) {
             *volume_reached = 0;
             for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in uscita per svuotare completamente il serbatoio
                 if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
@@ -100,39 +100,104 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                     }
                 }
             }
-        }
+        }*/
         // **Caso 3: Ciclo completato (volume = 0 dopo aver raggiunto obiettivo)**
         // Non fa nulla, il serbatoio ha finito il suo ciclo
     }
 }
 
-void update_tank_concentration(Tank *tanks,int num_tanks, Valve *valve, double deltaT) {
-    if (!valve->is_on) //guarda se la valvola è spenta
-        return;
-    Tank *from = NULL;
-    Tank *to = NULL;
-    for(int i = 0; i < num_tanks; i++){         //si cercano i due serbatoi connessi alla valvola: il from e il to
-        if (tanks[i].id == valve->from_tank) 
-            from = &tanks[i];
-        if (tanks[i].id == valve->to_tank)
-            to = &tanks[i];
-    }
-    if (from == NULL || to == NULL)             //se non si trovano serbatoi collegati si esce dalla funzione
-        return;
-   
-    double volume_in = valve->max_flow * deltaT; //quanto volume arriva in deltaT tempo
-    if (volume_in > from->volume)
-    volume_in = from->volume; 
-    double V_old = to->volume;
-    double V_new = V_old + volume_in - EVAP_COEFF * V_old; //calcolo nuovo volume del serbatoio di destinazione
-    if (V_new <= 0) //se il volume è negativo (non realistico)
-    return;
-    double C_old = to->concentration;
-    double C_in = from->concentration;
-    double C_new = (C_old * V_old + C_in * volume_in) / V_new; //formula miscelazione perfetta
-    to->concentration = C_new;
-    
+void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *pumps, int num_pumps, double deltaT, int *concentration_reached, int *volume_reached) {
+    *concentration_reached = 1;
 
+    for (int i = 0; i < num_tanks; i++) {
+        Tank *to = &tanks[i];
+        double V_old = to->volume;
+        if (V_old <= 0) continue;
+
+        double total_volume_in = 0.0;
+        double weighted_conc_sum = 0.0;
+
+        for (int p = 0; p < num_pumps; p++) {
+            if (pumps[p].is_on && pumps[p].to_tank == to->id) {
+                for (int j = 0; j < num_tanks; j++) {
+                    if (tanks[j].id == pumps[p].from_tank || pumps[p].from_tank < 0) {
+                        double conc_in;
+                        if (pumps[p].from_tank < 0) {
+                            conc_in = (to->id == 1) ? CONCENTRATION_IN1 : CONCENTRATION_IN2;
+                        } else {
+                            conc_in = tanks[j].concentration;
+                        }
+                        double V_in = pumps[p].max_flow * deltaT;
+                        if (pumps[p].from_tank >= 0 && V_in > tanks[j].volume) V_in = tanks[j].volume;
+                        total_volume_in += V_in;
+                        weighted_conc_sum += conc_in * V_in;
+                        break;
+                    }
+                }
+            }
+        }
+
+        double V_new = V_old + total_volume_in - EVAP_COEFF * V_old;
+        if (V_new <= 0) continue;
+
+        double C_old = to->concentration;
+        double C_new = (C_old * V_old + weighted_conc_sum) / V_new;
+        to->concentration = C_new;
+
+        double MIN_C = (to->id == 1) ? MIN_CONCENTRATION : MIN_CONCENTRATION2;
+        double MAX_C = (to->id == 1) ? MAX_CONCENTRATION : MAX_CONCENTRATION2;
+        double CAP = (to->id == 1) ? CAPACITY : CAPACITY2;
+
+        if (!volume_reached) {
+            // Durante la fase di riempimento, solo aggiornamento formula, nessun controllo
+            continue;
+        }
+
+        // Inizia la logica di controllo solo quando volume_reached == 1
+        if (C_new < MIN_C || C_new > MAX_C) {
+            *concentration_reached = 0;
+        }
+
+        if (C_new < MIN_C) {
+            if (to->volume >= CAP) {
+                for (int p = 0; p < num_pumps; p++) {
+                    if ((to->id == 1 && pumps[p].from_tank == 1 && pumps[p].to_tank == -1) ||
+                        (to->id == 2 && pumps[p].from_tank == 2 && pumps[p].to_tank == -2)) {
+                        pumps[p].is_on = 1;
+                    }
+                }
+            } else {
+                for (int p = 0; p < num_pumps; p++) {
+                    if ((to->id == 1 && pumps[p].from_tank == 2 && pumps[p].to_tank == 1) ||
+                        (to->id == 2 && pumps[p].from_tank < 0 && pumps[p].to_tank == 2)) {
+                        pumps[p].is_on = 1;
+                    }
+                }
+            }
+        } else if (C_new > MAX_C) {
+            if (to->volume >= CAP) {
+                for (int p = 0; p < num_pumps; p++) {
+                    if ((to->id == 1 && pumps[p].from_tank == 1 && pumps[p].to_tank == -1) ||
+                        (to->id == 2 && pumps[p].from_tank == 2 && pumps[p].to_tank == -2)) {
+                        pumps[p].is_on = 1;
+                    }
+                }
+            } else {
+                for (int p = 0; p < num_pumps; p++) {
+                    if ((to->id == 1 && pumps[p].from_tank < 0 && pumps[p].to_tank == 1) ||
+                        (to->id == 2 && pumps[p].from_tank == 1 && pumps[p].to_tank == 2)) {
+                        pumps[p].is_on = 1;
+                    }
+                }
+            }
+        } else {
+            for (int p = 0; p < num_pumps; p++) {
+                if (pumps[p].from_tank == to->id || pumps[p].to_tank == to->id) {
+                    pumps[p].is_on = 0;
+                }
+            }
+        }
+    }
 }
 
 void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Heater *heaters, int num_heaters, double deltaT) {

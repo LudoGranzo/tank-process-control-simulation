@@ -36,11 +36,12 @@ int main() {
     double deltaT = 1.0;     
     int t = 0;
     int volume_reached = 0;
+    int concentration_reached = 0;
 
-    while (volume_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+    while (volume_reached == 0 || concentration_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
         print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, t);
         update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
-        update_tank_concentration(tanks, num_tanks, &valve, deltaT);
+        update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
         update_tank_temperature(tanks, num_tanks, &valve, heaters, num_heaters, deltaT);
         t++;
         sleep(1);

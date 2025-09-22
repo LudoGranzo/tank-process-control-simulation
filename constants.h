@@ -10,6 +10,7 @@
 #define TANK_SCOPE 100.0 //Volume obiettivo del serbatoio 
 #define MIN_CONCENTRATION 0.3
 #define MAX_CONCENTRATION 0.5
+#define TEMPERATURE_SCOPE 30.0
 
 //Valori inziali serbatoio 2
 #define ID2 2
@@ -20,6 +21,7 @@
 #define TANK_SCOPE2 100.0 //Volume obiettivo del serbatoio
 #define MIN_CONCENTRATION2 0.4
 #define MAX_CONCENTRATION2 0.6
+#define TEMPERATURE_SCOPE2 25.0
 
 //Valori di simulazione iniziali valvola 1
 #define VALVE_ID 1

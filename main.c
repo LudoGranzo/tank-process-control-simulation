@@ -18,7 +18,7 @@ int main() {
 
     // Esempio di inizializzazione della pompa
     Pump pump1 = {PUMP_ID1, PUMP_FROM_TANK1, PUMP_TO_TANK1, PUMP_MAX_FLOW1, PUMP_IS_ON1};
-    Pump pump2 = {PUMP_ID2, PUMP_FROM_TANK2, PUMP_TO_TANK2, PUMP_MAX_FLOW2, PUMP_IS_ON2};    // Pompe in ingresso.
+    Pump pump2 = {PUMP_ID2, PUMP_FROM_TANK2, PUMP_TO_TANK2, PUMP_MAX_FLOW2, PUMP_IS_ON2}; // Pompe in ingresso.
     Pump pump3 = {PUMP_ID3, PUMP_FROM_TANK3, PUMP_TO_TANK3, PUMP_MAX_FLOW3, PUMP_IS_ON3}; // Pompa di collegamento tra i due serbatoi da 1 a 2.
     Pump pump4 = {PUMP_ID4, PUMP_FROM_TANK4, PUMP_TO_TANK4, PUMP_MAX_FLOW4, PUMP_IS_ON4}; // Pompa di collegamento tra i due serbatoi da 2 a 1.
     Pump pump5 = {PUMP_ID5, PUMP_FROM_TANK5, PUMP_TO_TANK5, PUMP_MAX_FLOW5, PUMP_IS_ON5}; // Pompa di uscita da 1 a esterno.
@@ -28,21 +28,24 @@ int main() {
 
 
     // Esempio di inizializzazione del riscaldatore
-    Heater heater2 = {1, 2, 200, 10, 1}; 
-    Heater heaters[] = {heater2};
-    int num_heaters = sizeof(heaters)/sizeof(heaters[0]);
+    Heater heater1 = {1, 1, 200, 10, 0}; // {id, tank_id, power, watt_per_degree, is_on}
+    Heater heater2 = {2, 2, 200, 10, 0};
+
+    Heater heaters[] = {heater1, heater2};
+    int num_heaters = sizeof(heaters) / sizeof(heaters[0]);
 
     // Inizializzazione della simulazione
     double deltaT = 1.0;     
     int t = 0;
     int volume_reached = 0;
     int concentration_reached = 0;
+    int temperature_reached = 0;
 
-    while (volume_reached == 0 || concentration_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
-        print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, t);
+    while (volume_reached == 0 || concentration_reached == 0 || temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+        print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
         update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
         update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
-        update_tank_temperature(tanks, num_tanks, &valve, heaters, num_heaters, deltaT);
+        update_tank_temperature(tanks, num_tanks, &valve, heaters, num_heaters, deltaT, &temperature_reached);
         t++;
         sleep(1);
     }  

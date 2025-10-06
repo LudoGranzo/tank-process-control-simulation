@@ -3,7 +3,7 @@
 #include <unistd.h>     // Per la funzione sleep
 
 #include "types.h"
-#include "constants.h"   
+#include "scenario_config.h"   
 #include "simulation.h"  
 
 int main() {
@@ -41,7 +41,7 @@ int main() {
     int concentration_reached = 0;
     int temperature_reached = 0;
 
-    while (volume_reached == 0 || concentration_reached == 0 || temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+    while (VOLUME_ENABLED &&volume_reached == 0 || CONCENTRATION_ENABLED && concentration_reached == 0 || TEMPERATURE_ENABLED && temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
         print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
         update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
         update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);

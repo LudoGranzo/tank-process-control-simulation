@@ -3,7 +3,7 @@
 
 #include "simulation.h"
 #include "types.h"
-#include "constants.h"
+#include "scenario_config.h"
     
 void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {    
     double volume_scopes[] = {TANK_SCOPE, TANK_SCOPE2}; // Array di volumi obiettivo dei serbatoi 
@@ -73,7 +73,7 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                 }
             }
         // **Caso 2: Scarico dopo aver raggiunto l'obiettivo (continua fino a volume 0)**
-        } /*else if (target_reached[i] && tanks[i].volume > 0) {
+        } else if (target_reached[i] && tanks[i].volume > 0 && EMPTYING_ENABLED) {
             *volume_reached = 0;
             for (int p = 0; p < num_pumps; p++) { //Attiva le pompe in uscita per svuotare completamente il serbatoio
                 if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank < 0) {
@@ -100,7 +100,7 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                     }
                 }
             }
-        }*/
+        }
         // **Caso 3: Ciclo completato (volume = 0 dopo aver raggiunto obiettivo)**
         // Non fa nulla, il serbatoio ha finito il suo ciclo
     }

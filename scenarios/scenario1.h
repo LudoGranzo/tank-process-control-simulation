@@ -6,23 +6,25 @@
 #define ID 1
 #define INITIAL_VOLUME 0.0
 #define INITIAL_CONCENTRATION 0.2
-#define INITIAL_TEMPERATURE 25.0
 #define CAPACITY 100.0
 #define TANK_SCOPE 100.0 //Volume obiettivo del serbatoio 
 #define MIN_CONCENTRATION 0.3
 #define MAX_CONCENTRATION 0.5
-#define TEMPERATURE_SCOPE 200.0
+#define INITIAL_TEMPERATURE 20.0
+#define TEMP_MIN1 22.0
+#define TEMP_MAX1 25.0
 
 //Valori inziali serbatoio 2
 #define ID2 2
 #define INITIAL_VOLUME2 50.0
 #define INITIAL_CONCENTRATION2 0.6
-#define INITIAL_TEMPERATURE2 20.0
 #define CAPACITY2 200.0
 #define TANK_SCOPE2 100.0 //Volume obiettivo del serbatoio
 #define MIN_CONCENTRATION2 0.4
 #define MAX_CONCENTRATION2 0.6
-#define TEMPERATURE_SCOPE2 25.0
+#define INITIAL_TEMPERATURE2 22.0
+#define TEMP_MIN2 25.0
+#define TEMP_MAX2 28.0
 
 //Valori di simulazione iniziali valvola 1
 #define VALVE_ID 1
@@ -82,7 +84,7 @@
 //Controlli scenario 1: Solo volume
 #define VOLUME_ENABLED 1      // Abilitato il controllo del volume
 #define CONCENTRATION_ENABLED 0 // Disabilitato il controllo della concentrazione
-#define TEMPERATURE_ENABLED 0   // Disabilitato il controllo della temperatura
+#define TEMPERATURE_ENABLED 1   // Abilitato il controllo della temperatura
 #define EMPTYING_ENABLED 1      // Svuotammento abilitato
 
 #endif // SCENARIO1_H

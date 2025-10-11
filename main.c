@@ -40,14 +40,15 @@ int main() {
     int volume_reached = 0;
     int concentration_reached = 0;
     int temperature_reached = 0;
-
+    //while(1){
     while (VOLUME_ENABLED &&volume_reached == 0 || CONCENTRATION_ENABLED && concentration_reached == 0 || TEMPERATURE_ENABLED && temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
         print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
         update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
         update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
-        update_tank_temperature(tanks, num_tanks, &valve, heaters, num_heaters, deltaT, &temperature_reached);
+        update_tank_temperature(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, deltaT, &temperature_reached);
         t++;
         sleep(1);
     }  
+    print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
     return 0;
 }

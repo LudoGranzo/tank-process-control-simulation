@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "simulation.h"
 #include "types.h"
@@ -160,66 +161,110 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *
     }
 }
 
-void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Heater *heaters, int num_heaters, double deltaT, int *temperature_reached) {
-      (void)valve; // non usata qui
- if (tanks[0].temperature >= TEMPERATURE_SCOPE &&
-        tanks[1].temperature >= TEMPERATURE_SCOPE2) {
-        *temperature_reached = 1;  // tutti in temperatura
-    } else {
-        *temperature_reached = 0;  // no
-    }    
-    for (int h = 0; h < num_heaters; h++) {
-        Heater *ht = &heaters[h];
 
-        // Trova il tank associato a questo heater
-        Tank *t = NULL;
-        for (int i = 0; i < num_tanks; i++) {
-            if (tanks[i].id == ht->tank_id) { t = &tanks[i]; break; }
-        }
-        if (!t) continue;          // nessun tank associato
-        if (t->volume <= 0.0) {    // niente fluido -> spegni e passa oltre
-            ht->is_on = 0;
-            continue;
-        }
+void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, double deltaT, int *temperature_reached) {
+    int all_temps_ok = 1;
 
-        // Target per tank (gestisce Tank 1 e Tank 2)
-        double target =
-            (t->id == 1) ? TEMPERATURE_SCOPE :
-            (t->id == 2) ? TEMPERATURE_SCOPE2 : TEMPERATURE_SCOPE;
-
-        // Se già a/sopra target: clamp + spegni
-        if (t->temperature >= target) {
-            t->temperature = target;
-            ht->is_on = 0;
-            continue;
-        }
-
-        // Sotto target: accendi e scalda.
-        // Modello dal progetto: ΔT = (Q_heat * Δt) / V,
-        // con Q_heat = POWER / WATT_PER_DEGREE.
-        if (ht->power > 0.0 && ht->watt_per_degree > 0.0) {
-            ht->is_on = 1;
-            double Q_heat = ht->power / ht->watt_per_degree;   // [°C·L/s]
-            double dT = (Q_heat * deltaT) / t->volume;     // ΔT modello di progetto
-            t->temperature += dT;
-
-            // Clamp e spegnimento se raggiunto lo scope
-            if (t->temperature >= target) {
-                t->temperature = target;
-                ht->is_on = 0;
+    for (int i = 0; i < num_tanks; i++) {
+        Tank *t = &tanks[i];
+        
+        // Se il serbatoio è vuoto, salta
+        if (t->volume <= 0) continue;
+        
+        // Trova il riscaldatore corrispondente
+        Heater *current_heater = NULL;
+        for (int h = 0; h < num_heaters; h++) {
+            if (heaters[h].tank_id == t->id) {
+                current_heater = &heaters[h];
+                break;
             }
-        } else {
-            // Parametri heater non validi -> spegni
-            ht->is_on = 0;
+        }
+        
+        if (current_heater == NULL) continue;
+        
+        // CONTROLLO DEL RISCALDATORE
+        double tmin = (t->id == 1) ? TEMP_MIN1 : TEMP_MIN2;
+        double tmax = (t->id == 1) ? TEMP_MAX1 : TEMP_MAX2;
+        double tmid = (tmin + tmax) / 2.0;
+        
+        if (t->temperature < tmin) {
+            current_heater->is_on = 1;
+        } else if (t->temperature >= tmid) {
+            current_heater->is_on = 0;
+        }
+        
+        // CALCOLA SEMPRE IL MIXING TERMICO (anche con heater OFF)
+        double V_prev = t->volume;
+        
+        // Calcola flussi in ingresso e temperatura media
+        double total_volume_in = 0.0;
+        double weighted_temp_sum = 0.0;
+        
+        for (int p = 0; p < num_pumps; p++) {
+            if (pumps[p].is_on && pumps[p].to_tank == t->id) {
+                double temp_in;
+                if (pumps[p].from_tank < 0) {
+                    temp_in = (t->id == 1) ? INLET_TEMPERATURE1 : INLET_TEMPERATURE2;
+                } else {
+                    for (int j = 0; j < num_tanks; j++) {
+                        if (tanks[j].id == pumps[p].from_tank) {
+                            temp_in = tanks[j].temperature;
+                            break;
+                        }
+                    }
+                }
+                
+                double V_in = pumps[p].max_flow * deltaT;
+                if (pumps[p].from_tank >= 0) {
+                    for (int j = 0; j < num_tanks; j++) {
+                        if (tanks[j].id == pumps[p].from_tank && V_in > tanks[j].volume) {
+                            V_in = tanks[j].volume;
+                            break;
+                        }
+                    }
+                }
+                
+                total_volume_in += V_in;
+                weighted_temp_sum += temp_in * V_in;
+            }
+        }
+        
+        // Calcola V(t+1)
+        double V_new = V_prev + total_volume_in - EVAP_COEFF * V_prev;
+        if (V_new <= 0) {
+            t->volume = 0;
+            continue;
+        }
+        
+        // APPLICA SEMPRE LA FORMULA: T(t+1) = [T(t)*V(t) + Σ P_in*T_in*Δt + Q_heat*Δt] / V(t+1)
+        double numerator = t->temperature * V_prev + weighted_temp_sum;
+        
+        // Aggiungi Q_heat SOLO se il riscaldatore è ON
+        if (current_heater->is_on) {
+            double Q_heat = current_heater->power / current_heater->watt_per_degree;
+            numerator += Q_heat * deltaT;
+        }
+        
+        // Calcola la nuova temperatura
+        t->temperature = numerator / V_new;
+        
+        // Verifica condizione di terminazione
+        if (t->temperature < tmin || t->temperature > tmax || current_heater->is_on) {
+            all_temps_ok = 0;
         }
     }
-   
+    
+    if (temperature_reached) *temperature_reached = all_temps_ok;
 }
 
 void print_new_values(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, int t) {
     printf("Time: %ds\n", t);
     for (int i = 0; i < num_tanks; i++) {
-        printf("TANK %d: V= %.2f L, C= %.2f, T= %.2f°C\n", tanks[i].id, tanks[i].volume, tanks[i].concentration, tanks[i].temperature);
+            if (tanks[i].volume > 0) {
+                printf("TANK %d: V= %.2f L, C= %.2f, T= %.2f°C\n", tanks[i].id, tanks[i].volume, tanks[i].concentration, tanks[i].temperature);
+            } else {
+                printf("TANK %d: V= %.2f L, C= %.2f\n", tanks[i].id, tanks[i].volume, tanks[i].concentration);
+            }
     }
     if (valve->is_on) 
         printf("VALVE%d%d: OPEN\n", valve->from_tank, valve->to_tank);

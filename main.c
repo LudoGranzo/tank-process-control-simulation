@@ -51,6 +51,5 @@ int main() {
         t++;
         sleep(1);
     }  
-    print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
     return 0;
 }

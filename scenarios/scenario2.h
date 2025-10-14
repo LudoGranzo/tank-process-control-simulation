@@ -1,7 +1,9 @@
 #ifndef SCENARIO2_H
 #define SCENARIO2_H
 
-// SCENARIO 2: Test controllo temperatura - riempimento continuo senza svuotamento
+// SCENARIO 2: Controllo termico di un processo sensibile: i serbatoi devono mantenere la temperatura entro un certo range
+// I fluidi in ingresso sono più freddi, quindi i riscaldatori devono attivarsi per mantenere la temperatura
+// L'obiettivo è sia evitare raffreddamento eccessivo sia sovratemperatura
 #define ID 1
 #define INITIAL_VOLUME 20.0
 #define INITIAL_CONCENTRATION 0.3
@@ -44,8 +46,8 @@
 #define CONCENTRATION_IN1 0.3
 
 #define PUMP_ID2 2
-#define PUMP_FROM_TANK2 -2
-#define PUMP_TO_TANK2 2
+#define PUMP_FROM_TANK2 -1
+#define PUMP_TO_TANK2 1
 #define PUMP_MAX_FLOW2 12.0
 #define PUMP_IS_ON2 1        // ATTIVA
 #define CONCENTRATION_IN2 0.4
@@ -75,6 +77,22 @@
 #define PUMP_TO_TANK6 -2
 #define PUMP_MAX_FLOW6 0.0   // DISABILITATA
 #define PUMP_IS_ON6 0
+
+//Pompa in entrata serbatoio 2
+    #define PUMP_ID7 7
+    #define PUMP_FROM_TANK7 -2  // Fonte esterna diversa
+    #define PUMP_TO_TANK7 2     // Verso serbatoio 2
+    #define PUMP_MAX_FLOW7 4.0  // Flusso massimo
+    #define PUMP_IS_ON7 1       // Inizialmente attiva
+    #define CONCENTRATION_IN7 0.5  // Concentrazione MEDIA della fonte 7
+
+    //Seconda pompa in ingresso serbatoio 2
+    #define PUMP_ID8 8
+    #define PUMP_FROM_TANK8 -2  // Fonte esterna diversa
+    #define PUMP_TO_TANK8 2     // Verso serbatoio 2
+    #define PUMP_MAX_FLOW8 3.0  // Flusso massimo
+    #define PUMP_IS_ON8 1       // Inizialmente attiva
+    #define CONCENTRATION_IN8 0.6  // Concentrazione ALTA della fonte 8
 
 #define EVAP_COEFF 0.0005    // Ridotta
 

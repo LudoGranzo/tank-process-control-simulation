@@ -4,13 +4,13 @@
 // SCENARIO 1: Gestione di una fase batch con riempimento e scarico.
 // Il sistema deve riempire il serbatoio 1 fino a un certo livello, miscelare, poi scaricare. 
 #define ID 1
-#define INITIAL_VOLUME 0.0
-#define INITIAL_CONCENTRATION 0.2
+#define INITIAL_VOLUME 10.0
+#define INITIAL_CONCENTRATION 0.35
 #define CAPACITY 100.0
 #define TANK_SCOPE 100.0 //Volume obiettivo del serbatoio 
 #define MIN_CONCENTRATION 0.3
 #define MAX_CONCENTRATION 0.5
-#define INITIAL_TEMPERATURE 20.0
+#define INITIAL_TEMPERATURE 23.0
 #define TEMP_MIN1 22.0
 #define TEMP_MAX1 25.0
 
@@ -22,9 +22,13 @@
 #define TANK_SCOPE2 100.0 //Volume obiettivo del serbatoio
 #define MIN_CONCENTRATION2 0.4
 #define MAX_CONCENTRATION2 0.6
-#define INITIAL_TEMPERATURE2 22.0
+#define INITIAL_TEMPERATURE2 26.0
 #define TEMP_MIN2 25.0
 #define TEMP_MAX2 28.0
+
+//valorifluidi in ingresso
+#define INLET_TEMPERATURE1 23.0      // Acqua fredda in ingresso al TANK1
+#define INLET_TEMPERATURE2 26.0      // Acqua fredda in ingresso al TANK2
 
 //Valori di simulazione iniziali valvola 1
 #define VALVE_ID 1
@@ -43,8 +47,8 @@
 
 // Valori di simulazione iniziali pompa in ingresso2
 #define PUMP_ID2 2
-#define PUMP_FROM_TANK2 -2 // Serbatoio di partenza
-#define PUMP_TO_TANK2 2 // Serbatoio di arrivo
+#define PUMP_FROM_TANK2 -1 // Serbatoio di partenza
+#define PUMP_TO_TANK2 1 // Serbatoio di arrivo
 #define PUMP_MAX_FLOW2 7.0 // Flusso massimo della pompa
 #define PUMP_IS_ON2 0 // Stato iniziale della pompa (spenta)
 #define CONCENTRATION_IN2 0.4  // concentrazione del fluido che entra in TANK 2 (P22)
@@ -77,13 +81,28 @@
 #define PUMP_MAX_FLOW6 8.0 // Flusso massimo della pompa
 #define PUMP_IS_ON6 0 // Stato iniziale della pompa (spenta)
 
+//Pompa in entrata serbatoio 2
+#define PUMP_ID7 7
+#define PUMP_FROM_TANK7 -2  // Fonte esterna diversa
+#define PUMP_TO_TANK7 2     // Verso serbatoio 2
+#define PUMP_MAX_FLOW7 4.0  // Flusso massimo
+#define PUMP_IS_ON7 1       // Inizialmente attiva
+#define CONCENTRATION_IN7 0.5  // Concentrazione MEDIA della fonte 7
+
+//Seconda pompa in ingresso serbatoio 2
+#define PUMP_ID8 8
+#define PUMP_FROM_TANK8 -2  // Fonte esterna diversa
+#define PUMP_TO_TANK8 2     // Verso serbatoio 2
+#define PUMP_MAX_FLOW8 3.0  // Flusso massimo
+#define PUMP_IS_ON8 1       // Inizialmente attiva
+#define CONCENTRATION_IN8 0.6  // Concentrazione ALTA della fonte 8
 
 // Parametri del sistema
 #define EVAP_COEFF 0.001
 
 //Controlli scenario 1: Solo volume
 #define VOLUME_ENABLED 1      // Abilitato il controllo del volume
-#define CONCENTRATION_ENABLED 0 // Disabilitato il controllo della concentrazione
+#define CONCENTRATION_ENABLED 1 // Abilitato il controllo della concentrazione
 #define TEMPERATURE_ENABLED 1   // Abilitato il controllo della temperatura
 #define EMPTYING_ENABLED 1      // Svuotammento abilitato
 

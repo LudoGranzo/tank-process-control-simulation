@@ -6,11 +6,13 @@
     #include "scenarios/scenario1.h"
 #elif defined SCENARIO_2
     #include "scenarios/scenario2.h"
+#elif defined SCENARIO_3
+    #include "scenarios/scenario3.h"
 #else
+    // Valori iniziali serbatoio 1
     #define ID 1
     #define INITIAL_VOLUME 0.0
     #define INITIAL_CONCENTRATION 0.2
-    
     #define CAPACITY 100.0
     #define TANK_SCOPE 100.0 //Volume obiettivo del serbatoio 
     #define MIN_CONCENTRATION 0.3
@@ -23,7 +25,6 @@
     #define ID2 2
     #define INITIAL_VOLUME2 50.0
     #define INITIAL_CONCENTRATION2 0.6
-    
     #define CAPACITY2 200.0
     #define TANK_SCOPE2 100.0 //Volume obiettivo del serbatoio
     #define MIN_CONCENTRATION2 0.4
@@ -32,9 +33,10 @@
     #define TEMP_MIN2 25.0
     #define TEMP_MAX2 28.0
 
-    //valorifluidi in ingresso
+    //Valori di temperature fluidi in ingresso
     #define INLET_TEMPERATURE1 18.0      // Acqua fredda in ingresso al TANK1
     #define INLET_TEMPERATURE2 20.0      // Acqua fredda in ingresso al TANK2
+
     //Valori di simulazione iniziali valvola 1
     #define VALVE_ID 1
     #define VALVE_FROM_TANK 1 // Serbatoio di partenza
@@ -42,7 +44,7 @@
     #define VALVE_MAX_FLOW 10.0 // Flusso massimo della valvola
     #define VALVE_IS_ON 0 // Stato iniziale della valvola (spenta)
 
-    // Valori di simulazione iniziali pompa in ingresso1
+    // Valori di simulazione iniziali prima pompa in ingresso al serbatoio 1
     #define PUMP_ID1 1
     #define PUMP_FROM_TANK1 -1 // Serbatoio di partenza
     #define PUMP_TO_TANK1 1 // Serbatoio di arrivo
@@ -50,10 +52,10 @@
     #define PUMP_IS_ON1 0 // Stato iniziale della pompa (spenta)
     #define CONCENTRATION_IN1 0.4  // concentrazione del fluido che entra in TANK 1 (P11)
 
-    // Valori di simulazione iniziali pompa in ingresso2
+    // Valori di simulazione iniziali seconda pompa in ingresso al serbatoio 1
     #define PUMP_ID2 2
-    #define PUMP_FROM_TANK2 -2 // Serbatoio di partenza
-    #define PUMP_TO_TANK2 2 // Serbatoio di arrivo
+    #define PUMP_FROM_TANK2 -1 // Serbatoio di partenza
+    #define PUMP_TO_TANK2 1 // Serbatoio di arrivo
     #define PUMP_MAX_FLOW2 7.0 // Flusso massimo della pompa
     #define PUMP_IS_ON2 0 // Stato iniziale della pompa (spenta)
     #define CONCENTRATION_IN2 0.4  // concentrazione del fluido che entra in TANK 2 (P22)
@@ -86,6 +88,21 @@
     #define PUMP_MAX_FLOW6 8.0 // Flusso massimo della pompa
     #define PUMP_IS_ON6 0 // Stato iniziale della pompa (spenta)
 
+    // Valori di simulazione iniziali prima pompa in ingresso al serbatoio 2
+    #define PUMP_ID7 7
+    #define PUMP_FROM_TANK7 -2  // Fonte esterna diversa
+    #define PUMP_TO_TANK7 2     // Verso serbatoio 2
+    #define PUMP_MAX_FLOW7 4.0  // Flusso massimo
+    #define PUMP_IS_ON7 0       // Stato iniziale della pompa (spenta)
+    #define CONCENTRATION_IN7 0.5  // Concentrazione MEDIA della fonte 7
+
+    // Valori di simulazione iniziali seconda pompa in ingresso al serbatoio 2
+    #define PUMP_ID8 8
+    #define PUMP_FROM_TANK8 -2  // Fonte esterna diversa
+    #define PUMP_TO_TANK8 2     // Verso serbatoio 2
+    #define PUMP_MAX_FLOW8 3.0  // Flusso massimo
+    #define PUMP_IS_ON8 0      // Stato iniziale della pompa (spenta)
+    #define CONCENTRATION_IN8 0.6  // Concentrazione ALTA della fonte 8
 
     // Parametri del sistema
     #define EVAP_COEFF 0.001

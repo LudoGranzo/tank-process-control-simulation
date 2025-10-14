@@ -23,7 +23,9 @@ int main() {
     Pump pump4 = {PUMP_ID4, PUMP_FROM_TANK4, PUMP_TO_TANK4, PUMP_MAX_FLOW4, PUMP_IS_ON4}; // Pompa di collegamento tra i due serbatoi da 2 a 1.
     Pump pump5 = {PUMP_ID5, PUMP_FROM_TANK5, PUMP_TO_TANK5, PUMP_MAX_FLOW5, PUMP_IS_ON5}; // Pompa di uscita da 1 a esterno.
     Pump pump6 = {PUMP_ID6, PUMP_FROM_TANK6, PUMP_TO_TANK6, PUMP_MAX_FLOW6, PUMP_IS_ON6}; // Pompa di uscita da 2 a esterno.
-    Pump pumps[] = {pump1, pump2, pump3, pump4, pump5, pump6}; // Array di pompe
+    Pump pump7 = {PUMP_ID7, PUMP_FROM_TANK7, PUMP_TO_TANK7, PUMP_MAX_FLOW7, PUMP_IS_ON7}; // Pompa in entrata serbatoio 2
+    Pump pump8 = {PUMP_ID8, PUMP_FROM_TANK8, PUMP_TO_TANK8, PUMP_MAX_FLOW8, PUMP_IS_ON8}; // Seconda pompa in ingresso serbatoio 2
+    Pump pumps[] = {pump1, pump2, pump3, pump4, pump5, pump6, pump7, pump8}; // Array di pompe
     int num_pumps = sizeof(pumps) / sizeof(pumps[0]);
 
 

@@ -3,24 +3,25 @@
 
 // SCENARIO 3: Controllo della concentrazione con due fonti
 // Un serbatoio viene alimentato costantemente da due fonti con diverse concentrazioni.
-// L'obiettivo è mantenere la concentrazione nel serbatoio entro un range specifico.
+// L'obiettivo è raggiungere il volume scopo, mantenere il volume (a meno di perdite dovute al coefficiente di evaporazione) e nel frattempo mantenere la concentrazione entro il range specificato.
+// Il sistema deve decidere quale pompa attivare in modo da mantenere la concentrazione entro il range desiderato.
 
 // Valori di simulazione iniziali serbatoio 1
 #define ID 1 // Identificativo serbatoio
-#define INITIAL_VOLUME 0 // Volume iniziale
-#define INITIAL_CONCENTRATION 0 // Concentrazione iniziale del fluido già presente nel serbatoio 1
+#define INITIAL_VOLUME 1.0 // Volume iniziale
+#define INITIAL_CONCENTRATION 0.5 // Concentrazione iniziale del fluido già presente nel serbatoio 1 (0 perchè non c'è fluido).
 #define CAPACITY 150.0 // Capacità massima
 #define TANK_SCOPE 100.0 // Volume obiettivo
-#define MIN_CONCENTRATION 0.3 // Valore MINIMO del range di concentrazione
-#define MAX_CONCENTRATION 0.4 // Valore MASSIMO del range di concentrazione
-#define INITIAL_TEMPERATURE 0 // Temperatura iniziale del fluido già presente nel serbatoio
+#define MIN_CONCENTRATION 0.4 // Valore MINIMO del range di concentrazione
+#define MAX_CONCENTRATION 0.6 // Valore MASSIMO del range di concentrazione
+#define INITIAL_TEMPERATURE 0 // Temperatura iniziale del fluido già presente nel serbatoio (se non c'e fluido non c'è temperatura)
 #define TEMP_MIN1 20.0 // Valore MINIMO del range di temperatura
 #define TEMP_MAX1 25.0 // Valore MASSIMO del range di temperatura
 
 // Valori di simulazione iniziali serbatoio 2
 #define ID2 2 // Identificativo serbatoio
-#define INITIAL_VOLUME2 0 // Volume iniziale
-#define INITIAL_CONCENTRATION2 0  // Concentrazione iniziale del fluido già presente nel serbatoio 2
+#define INITIAL_VOLUME2 1.0 // Volume iniziale
+#define INITIAL_CONCENTRATION2 0.5  // Concentrazione iniziale del fluido già presente nel serbatoio 2
 #define CAPACITY2 150.0 // Capacità massima
 #define TANK_SCOPE2 80.0  // Volume obiettivo serbatoio 2
 #define MIN_CONCENTRATION2 0.4 // Range di concentrazione target serbatoio 2
@@ -44,25 +45,25 @@
 #define PUMP_ID1 1 // Identificativo pompa
 #define PUMP_FROM_TANK1 -1 // Fonte esterna
 #define PUMP_TO_TANK1 1 // Serbatoio di arrivo
-#define PUMP_MAX_FLOW1 8.0 // Flusso massimo
+#define PUMP_MAX_FLOW1 7.0 // Flusso massimo
 #define PUMP_IS_ON1 0 // Inizialmente spenta
-#define CONCENTRATION_IN1 0.3 // Concentrazione del primo fluido in ingresso al serbatoio 1
+#define CONCENTRATION_IN1 0.9 // Concentrazione del primo fluido in ingresso al serbatoio 1
 
-// Valori di simulazione iniziali seconda pompa in ingresso al serbatoio 2
+// Valori di simulazione iniziali seconda pompa in ingresso al serbatoio 1
 #define PUMP_ID2 2 // Identificativo pompa
 #define PUMP_FROM_TANK2 -1 // Fonte esterna
 #define PUMP_TO_TANK2 1 // Verso serbatoio principale
-#define PUMP_MAX_FLOW2 5.0 // Flusso massimo
+#define PUMP_MAX_FLOW2 8.0 // Flusso massimo
 #define PUMP_IS_ON2 0 // Inizialmente spenta
-#define CONCENTRATION_IN2 0.8 // Concentrazione del secondo fluido in ingresso al serbatoio 1
+#define CONCENTRATION_IN2 0.3 // Concentrazione del secondo fluido in ingresso al serbatoio 1
 
 // Valori di simulazione iniziali della prima pompa in ingresso al serbatoio 2
 #define PUMP_ID7 7 // Identificativo pompa
 #define PUMP_FROM_TANK7 -2 // Fonte esterna
 #define PUMP_TO_TANK7 2 // Verso serbatoio 2
-#define PUMP_MAX_FLOW7 4.0 // Flusso massimo
+#define PUMP_MAX_FLOW7 10.0 // Flusso massimo
 #define PUMP_IS_ON7 0 // Inizialmente spenta
-#define CONCENTRATION_IN7 0.5 // Concentrazione del primo fluido in ingresso al serbatoio 2
+#define CONCENTRATION_IN7 0.8 // Concentrazione del primo fluido in ingresso al serbatoio 2
 
 // Valori di simulazione iniziali della seconda pompa in ingresso al serbatoio 2
 #define PUMP_ID8 8 // Identificativo pompa
@@ -70,7 +71,7 @@
 #define PUMP_TO_TANK8 2 // Verso serbatoio 2
 #define PUMP_MAX_FLOW8 3.0 // Flusso massimo
 #define PUMP_IS_ON8 0 // Inizialmente spenta
-#define CONCENTRATION_IN8 0.8 // Concentrazione del secondo fluido in ingresso al serbatoio 2
+#define CONCENTRATION_IN8 0.4 // Concentrazione del secondo fluido in ingresso al serbatoio 2
 
 // Valori di simulazione pompa di collegamento tra tank1 e tank2 (disabilitata)
 #define PUMP_ID3 3 // Identificativo pompa

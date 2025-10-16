@@ -7,6 +7,10 @@ typedef struct {
     double volume;
     double temperature;
     double concentration;
+    double prev_volume; // Volume al passo precedente
+    double prev_concentration;
+    double prev_temperature;
+    int target_reached; // Flag per indicare se ha raggiunto l'obiettivo
 } Tank;
 
 typedef struct {

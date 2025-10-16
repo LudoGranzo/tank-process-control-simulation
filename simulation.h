@@ -14,7 +14,4 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve,Pump *pump
 //Funzione per stampare i nuovi valori dei serbatoi e valvole 
 void print_new_values(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, int t);
 
-// Funzione per svuotare i serbatoio
-void emptying_tank(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, double deltaT);
-
 #endif // SIMULATION_H

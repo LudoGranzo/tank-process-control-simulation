@@ -44,6 +44,7 @@ int main() {
     int temperature_reached = 0;
     //while(1){
     while (VOLUME_ENABLED &&volume_reached == 0 || CONCENTRATION_ENABLED && concentration_reached == 0 || TEMPERATURE_ENABLED && temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+        // Stampa PRIMA degli aggiornamenti (mostra lo stato che sta per essere applicato)
         print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
         
         // Salva i valori precedenti PRIMA di aggiornare
@@ -52,6 +53,7 @@ int main() {
             tanks[i].prev_concentration = tanks[i].concentration;
         }
         
+        // Aggiorna volume e concentrazione insieme
         update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
         update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
         update_tank_temperature(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, deltaT, &temperature_reached);

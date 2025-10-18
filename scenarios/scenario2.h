@@ -100,7 +100,7 @@
 
 // Abilitazioni funzionamenti
 #define VOLUME_ENABLED 1
-#define CONCENTRATION_ENABLED 1  
+#define CONCENTRATION_ENABLED 0  
 #define TEMPERATURE_ENABLED 1
 #define EMPTYING_ENABLED 0       // Svuotamento disabilitato
 

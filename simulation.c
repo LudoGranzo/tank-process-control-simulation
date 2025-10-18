@@ -9,6 +9,13 @@
 void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {   
     double volume_scopes[] = {TANK_SCOPE, TANK_SCOPE2}; // Array di volumi obiettivo dei serbatoi 
     static int initialized = 0; // Flag per inizializzazione una sola volta
+    static int concentration_pumps_opened = 0; // Apri pompe d'ingresso al primo passo se concentration abilitato
+    static int start = 0;
+    
+    // NOTE: STEP 0 (controllo pompe per la concentrazione) è stato spostato
+    // in update_tank_concentration per separare i calcoli di volume da quelli
+    // di concentrazione. Qui non rimane logica relativa alle pompe di
+    // concentrazione.
     // Inizializzazione: controlla se i serbatoi hanno già raggiunto il volume obiettivo all'inizio
     if (!initialized) {
         for (int i = 0; i < num_tanks; i++) {
@@ -19,6 +26,20 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
         }
         initialized = 1;
     }
+
+    // Se il controllo della concentrazione è abilitato, al primo passo apri
+    // le pompe di ingresso esterne verso i serbatoi così il sistema ha flusso
+    // disponibile per i calcoli successivi (al "secondo 0").
+#ifdef MIN_CONCENTRATION
+    if (CONCENTRATION_ENABLED && !concentration_pumps_opened) {
+        for (int p = 0; p < num_pumps; p++) {
+            if (pumps[p].from_tank < 0 && pumps[p].to_tank >= 0) {
+                pumps[p].is_on = 1;
+            }
+        }
+        concentration_pumps_opened = 1;
+    }
+#endif
 
     *volume_reached = 1; // Inizialmente si assume che il ciclo sia completato
     for (int i = 0; i < num_tanks; i++) {
@@ -36,6 +57,16 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                     }
                 }
             }
+            
+            if (VOLUME_ENABLED && CONCENTRATION_ENABLED && start) {
+                for (int p = 0; p < num_pumps; p++) {
+                    if ((pumps[p].to_tank == tanks[i].id) && (pumps[p].from_tank < 0)) {
+                        pumps[p].is_on = 1; // Attiva tutte le pompe di ingresso
+                    }
+                }
+                start = 1;
+            }
+            
             for (int p = 0; p < num_pumps; p++) { //Considera le pompe in ingresso per riempire verso l'obiettivo
                 if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
                     if (pumps[p].is_on) {
@@ -149,12 +180,96 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
 void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *pumps, int num_pumps, double deltaT, int *concentration_reached, int *volume_reached) {
     if (concentration_reached) *concentration_reached = 1;
 
-    for (int i = 0; i < num_tanks; i++) {
-        if (tanks[i].volume <= 0.0) {
-            tanks[i].concentration = 0.0;
-            continue;
-        }
+    // **STEP 0: CONTROLLO POMPE PER LA CONCENTRAZIONE (spostato qui)**
+    // Quando CONCENTRATION_ENABLED è attivo, alla prima chiamata di questa
+    // funzione apriamo le pompe di ingresso (quelle con from_tank < 0) in modo
+    // che i calcoli di concentrazione possano usare immediatamente tali flussi.
+    // Successivamente applichiamo la logica di selezione pompe basata sulla
+    // concentrazione corrente per bilanciare le sorgenti.
+    
+#ifdef MIN_CONCENTRATION
+    if (CONCENTRATION_ENABLED) {
+        
 
+        // Logica di selezione pompe (come in precedenza) per ciascun serbatoio.
+        for (int i = 0; i < num_tanks; i++) {
+            // Se il serbatoio ha già raggiunto l'obiettivo di volume, non
+            // riattivare pompe di ingresso per motivi di concentrazione.
+            if (tanks[i].target_reached) continue;
+
+            double MIN_C = (tanks[i].id == 1) ? MIN_CONCENTRATION : MIN_CONCENTRATION2;
+            double MAX_C = (tanks[i].id == 1) ? MAX_CONCENTRATION : MAX_CONCENTRATION2;
+            double C_current = tanks[i].concentration;
+
+            // Trova le pompe esterne per questo serbatoio
+            int external_pumps[2] = {-1, -1};
+            int ext_count = 0;
+
+            for (int p = 0; p < num_pumps; p++) {
+                if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
+                    if (ext_count < 2) {
+                        external_pumps[ext_count++] = p;
+                    }
+                }
+            }
+
+            if (ext_count == 0) continue;
+
+            // Concentrazioni delle fonti
+            double source_concentrations[2] = {0.0, 0.0};
+            for (int k = 0; k < ext_count; k++) {
+                int p_idx = external_pumps[k];
+                switch (pumps[p_idx].id) {
+                    case PUMP_ID1: source_concentrations[k] = CONCENTRATION_IN1; break;
+                    case PUMP_ID2: source_concentrations[k] = CONCENTRATION_IN2; break;
+                    case PUMP_ID7: source_concentrations[k] = CONCENTRATION_IN7; break;
+                    case PUMP_ID8: source_concentrations[k] = CONCENTRATION_IN8; break;
+                    default: source_concentrations[k] = CONCENTRATION_IN1; break;
+                }
+            }
+
+            // Strategia di controllo
+            if (C_current < (MIN_C + MAX_C) / 2) {
+                // Concentrazione troppo bassa: attiva pompa con concentrazione PIÙ ALTA
+                int best_pump = -1;
+                double highest_conc = -1.0;
+                for (int k = 0; k < ext_count; k++) {
+                    if (source_concentrations[k] > highest_conc) {
+                        highest_conc = source_concentrations[k];
+                        best_pump = k;
+                    }
+                }
+                if (best_pump >= 0) {
+                    for (int k = 0; k < ext_count; k++) {
+                        pumps[external_pumps[k]].is_on = (k == best_pump) ? 1 : 0;
+                    }
+                }
+            } else if (C_current > (MIN_C + MAX_C) / 2) {
+                // Concentrazione troppo alta: attiva pompa con concentrazione PIÙ BASSA
+                int best_pump = -1;
+                double lowest_conc = 2.0;
+                for (int k = 0; k < ext_count; k++) {
+                    if (source_concentrations[k] < lowest_conc) {
+                        lowest_conc = source_concentrations[k];
+                        best_pump = k;
+                    }
+                }
+                if (best_pump >= 0) {
+                    for (int k = 0; k < ext_count; k++) {
+                        pumps[external_pumps[k]].is_on = (k == best_pump) ? 1 : 0;
+                    }
+                }
+            } else {
+                // Nel range: usa entrambe le pompe
+                for (int k = 0; k < ext_count; k++) {
+                    pumps[external_pumps[k]].is_on = 1;
+                }
+            }
+        }
+    }
+#endif
+
+    for (int i = 0; i < num_tanks; i++) {
         // **FASE 1: CALCOLA SEMPRE LA CONCENTRAZIONE CON LA FORMULA FISICA**
         // Calcola contributo Σ Pin*Cin*Δt basandosi su pompe attualmente ON
         double sum_Pin_Cin_dt = 0.0;
@@ -189,23 +304,31 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *
         }
 
         // APPLICA SEMPRE LA FORMULA FISICA PER IL CALCOLO DELLA CONCENTRAZIONE
-        if (tanks[i].volume == 0.0) { 
-            tanks[i].concentration = 0.0; 
+        // Ma SOLO se il serbatoio ha già del volume
+        if (tanks[i].volume > 0.0) {
+            // Caso semplice richiesto: se siamo in fase di scarico puro (nessun inflow)
+            // e lo scaricamento è abilitato, manteniamo la concentrazione costante
+            // uguale alla concentrazione precedente.
+            if (EMPTYING_ENABLED && V_in == 0.0 && V_out > 0.0) {
+                tanks[i].concentration = tanks[i].prev_concentration;
+                // Clamp tra 0 e 1
+                if (tanks[i].concentration < 0.0) tanks[i].concentration = 0.0;
+                if (tanks[i].concentration > 1.0) tanks[i].concentration = 1.0;
+            } else {
+                // Formula di miscelazione originale: C(t+1) = [C(t)*V(t) + Σ Pin*Cin*Δt] / V(t+1)
+                tanks[i].concentration = (tanks[i].prev_concentration * tanks[i].prev_volume + sum_Pin_Cin_dt) / tanks[i].volume;
+            }
         } else {
-            // Formula corretta di miscelazione: C(t+1) = [C(t)*V(t) + Σ Pin*Cin*Δt] / V(t+1)
-            tanks[i].concentration = (tanks[i].prev_concentration * tanks[i].prev_volume + sum_Pin_Cin_dt) / tanks[i].volume;
+            // Serbatoio vuoto: concentrazione = 0
+            tanks[i].concentration = 0.0;
         }
-        
-        // Clamp tra 0 e 1
-        if (tanks[i].concentration < 0.0) tanks[i].concentration = 0.0; 
-        if (tanks[i].concentration > 1.0) tanks[i].concentration = 1.0;
 
         // **FASE 2: SE CONTROLLO CONCENTRAZIONE DISABILITATO, STOP QUI**
         if (!CONCENTRATION_ENABLED) {
             continue; // Vai al prossimo serbatoio - la concentrazione varia naturalmente
         }
 
-        // **FASE 3: CONTROLLO ATTIVO DELLA CONCENTRAZIONE**
+        // **FASE 3: VERIFICA SE SIAMO NEL RANGE TARGET**
         #ifdef MIN_CONCENTRATION
         double MIN_C = (tanks[i].id == 1) ? MIN_CONCENTRATION : MIN_CONCENTRATION2;
         double MAX_C = (tanks[i].id == 1) ? MAX_CONCENTRATION : MAX_CONCENTRATION2;
@@ -216,84 +339,16 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *
         if (C_current < MIN_C || C_current > MAX_C) {
             if (concentration_reached) *concentration_reached = 0;
         }
-
-        // Trova le pompe esterne per questo serbatoio
-        int external_pumps[2] = {-1, -1}; // Indici delle pompe esterne
-        int ext_count = 0;
-        
-        for (int p = 0; p < num_pumps; p++) {
-            // Pompe di ingresso da fonte esterna
-            if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
-                if (ext_count < 2) {
-                    external_pumps[ext_count++] = p;
-                }
-            }
-        }
-
-        // Se non ci sono pompe esterne, salta il controllo
-        if (ext_count == 0) continue;
-
-        // Prepara array con concentrazioni delle fonti esterne
-        double source_concentrations[2] = {0.0, 0.0};
-        
-        for (int k = 0; k < ext_count; k++) {
-            int p_idx = external_pumps[k];
-            switch (pumps[p_idx].id) {
-                case PUMP_ID1: source_concentrations[k] = CONCENTRATION_IN1; break;
-                case PUMP_ID2: source_concentrations[k] = CONCENTRATION_IN2; break;
-                case PUMP_ID7: source_concentrations[k] = CONCENTRATION_IN7; break;
-                case PUMP_ID8: source_concentrations[k] = CONCENTRATION_IN8; break;
-                default: source_concentrations[k] = CONCENTRATION_IN1; break;
-            }
-        }
-        if (!tanks[i].target_reached){
-        // **STRATEGIA DI CONTROLLO CONCENTRAZIONE**
-        if (C_current < (MIN_C + MAX_C) / 2) {
-            // CONCENTRAZIONE TROPPO BASSA: Attiva SOLO la pompa con concentrazione PIÙ ALTA
-            int best_pump = -1;
-            double highest_conc = -1.0;
-            
-            for (int k = 0; k < ext_count; k++) {
-                if (source_concentrations[k] > highest_conc) {
-                    highest_conc = source_concentrations[k];
-                    best_pump = k;
-                }
-            }
-            
-            if (best_pump >= 0) {
-                // Attiva SOLO la pompa con concentrazione più alta
-                for (int k = 0; k < ext_count; k++) {
-                    pumps[external_pumps[k]].is_on = (k == best_pump) ? 1 : 0;
-                }
-            }
-
-        } else if (C_current > (MIN_C + MAX_C) / 2) {
-            // CONCENTRAZIONE TROPPO ALTA: Attiva SOLO la pompa con concentrazione PIÙ BASSA
-            int best_pump = -1;
-            double lowest_conc = 2.0; // Valore alto per inizializzazione
-            
-            for (int k = 0; k < ext_count; k++) {
-                if (source_concentrations[k] < lowest_conc) {
-                    lowest_conc = source_concentrations[k];
-                    best_pump = k;
-                }
-            }
-            
-            if (best_pump >= 0) {
-                // Attiva SOLO la pompa con concentrazione più bassa
-                for (int k = 0; k < ext_count; k++) {
-                    pumps[external_pumps[k]].is_on = (k == best_pump) ? 1 : 0;
-                }
-            }
-            
-        } else {
-            // CONCENTRAZIONE NEL RANGE: MIXING con ENTRAMBE le pompe
-            for (int k = 0; k < ext_count; k++) {
-                pumps[external_pumps[k]].is_on = 1;
-            }
-        }
-    }
         #endif // MIN_CONCENTRATION
+    }
+
+    // Se il controllo del volume ha stabilito che tutti i serbatoi hanno
+    // raggiunto il volume obiettivo, assicuriamoci che TUTTE le pompe siano
+    // spente per evitare ulteriori cambiamenti (e consentire la terminazione).
+    if (volume_reached && *volume_reached) {
+        for (int p = 0; p < num_pumps; p++) {
+            pumps[p].is_on = 0;
+        }
     }
 }
 

@@ -110,5 +110,6 @@
 #define CONCENTRATION_ENABLED 1   // CONTROLLO CONCENTRAZIONE PRINCIPALE
 #define TEMPERATURE_ENABLED 0     // Temperatura non critica in questo scenario
 #define EMPTYING_ENABLED 0        // Svuotamento disabilitato
+#define DIVISION_ENABLED 0    // Disabilitato il bilanciamento dei volumi
 
 #endif // SCENARIO3_H

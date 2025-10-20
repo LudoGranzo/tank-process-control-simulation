@@ -8,13 +8,18 @@
 
 int main() {
     // Esempio di inizializzazione dei serbatoi e della valvola
-    Tank tank1 = {ID,CAPACITY, INITIAL_VOLUME, INITIAL_TEMPERATURE, INITIAL_CONCENTRATION};
-    Tank tank2 = {ID2, CAPACITY2, INITIAL_VOLUME2, INITIAL_TEMPERATURE2, INITIAL_CONCENTRATION2};    
+    // Inizializza tutti i campi della struct Tank per evitare warning Wmissing-field-initializers
+    Tank tank1 = { .id = ID, .capacity = CAPACITY, .volume = INITIAL_VOLUME, .temperature = INITIAL_TEMPERATURE, .concentration = INITIAL_CONCENTRATION, .prev_volume = INITIAL_VOLUME, .prev_concentration = INITIAL_CONCENTRATION, .prev_temperature = INITIAL_TEMPERATURE, .target_reached = 0 };
+    Tank tank2 = { .id = ID2, .capacity = CAPACITY2, .volume = INITIAL_VOLUME2, .temperature = INITIAL_TEMPERATURE2, .concentration = INITIAL_CONCENTRATION2, .prev_volume = INITIAL_VOLUME2, .prev_concentration = INITIAL_CONCENTRATION2, .prev_temperature = INITIAL_TEMPERATURE2, .target_reached = 0 };
     Tank tanks[] = {tank1, tank2}; // Array di serbatoi
     int num_tanks = sizeof(tanks) / sizeof(tanks[0]);
+    // Inizializza i campi "prev_" per evitare warning e avere uno stato coerente
+    for (int i = 0; i < num_tanks; i++) {
+        tanks[i].prev_volume = tanks[i].volume;
+        tanks[i].prev_concentration = tanks[i].concentration;
+        tanks[i].prev_temperature = tanks[i].temperature;
+    }
     
-    // Esempio di inizializzazione della valvola
-    Valve valve = {VALVE_ID, VALVE_FROM_TANK, VALVE_TO_TANK, VALVE_MAX_FLOW, VALVE_IS_ON};
 
     // Esempio di inizializzazione della pompa
     Pump pump1 = {PUMP_ID1, PUMP_FROM_TANK1, PUMP_TO_TANK1, PUMP_MAX_FLOW1, PUMP_IS_ON1};
@@ -27,6 +32,17 @@ int main() {
     Pump pump8 = {PUMP_ID8, PUMP_FROM_TANK8, PUMP_TO_TANK8, PUMP_MAX_FLOW8, PUMP_IS_ON8}; // Seconda pompa in ingresso serbatoio 2
     Pump pumps[] = {pump1, pump2, pump3, pump4, pump5, pump6, pump7, pump8}; // Array di pompe
     int num_pumps = sizeof(pumps) / sizeof(pumps[0]);
+
+    // Crea una valvola associata a ciascuna pompa (pump-valves) e inizializzala
+    Valve pump_valves[sizeof(pumps) / sizeof(pumps[0])];
+    for (int i = 0; i < num_pumps; i++) {
+        // Inizializziamo la valvola sulla base dei campi della pompa
+        pump_valves[i].id = pumps[i].id;
+        pump_valves[i].from_tank = pumps[i].from_tank;
+        pump_valves[i].to_tank = pumps[i].to_tank;
+        pump_valves[i].max_flow = pumps[i].max_flow;
+        pump_valves[i].is_on = pumps[i].is_on;
+    }
 
 
     // Esempio di inizializzazione del riscaldatore
@@ -42,10 +58,14 @@ int main() {
     int volume_reached = 0;
     int concentration_reached = 0;
     int temperature_reached = 0;
-    //while(1){
-    while (VOLUME_ENABLED &&volume_reached == 0 || CONCENTRATION_ENABLED && concentration_reached == 0 || TEMPERATURE_ENABLED && temperature_reached == 0) {    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+    // Itera fino a quando non si raggiungono i valori obiettivo di volume, concentrazione e temperatura
+    while ((VOLUME_ENABLED && volume_reached == 0) || (CONCENTRATION_ENABLED && concentration_reached == 0) || (TEMPERATURE_ENABLED && temperature_reached == 0)) {
+        // Sincronizza lo stato delle pump-valves con lo stato delle pompe prima di stampare
+        for (int i = 0; i < num_pumps; i++) {
+            pump_valves[i].is_on = pumps[i].is_on;
+        }
         // Stampa PRIMA degli aggiornamenti (mostra lo stato che sta per essere applicato)
-        print_new_values(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, t);
+        print_new_values(tanks, num_tanks, pumps, num_pumps, pump_valves, heaters, num_heaters, t);
         
         // Salva i valori precedenti PRIMA di aggiornare
         for (int i = 0; i < num_tanks; i++) {
@@ -54,10 +74,10 @@ int main() {
         }
         
         // Aggiorna volume e concentrazione insieme
-        update_tanks_volume(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &volume_reached);
-        update_tank_concentration(tanks, num_tanks, &valve, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
-        update_tank_temperature(tanks, num_tanks, &valve, pumps, num_pumps, heaters, num_heaters, deltaT, &temperature_reached);
-        
+        update_tanks_volume(tanks, num_tanks, pumps, num_pumps, deltaT, &volume_reached);
+        update_tank_concentration(tanks, num_tanks, pumps, num_pumps, deltaT, &concentration_reached, &volume_reached);
+        update_tank_temperature(tanks, num_tanks, pumps, num_pumps, heaters, num_heaters, deltaT, &temperature_reached);
+
         t++;
         sleep(1);
     }  

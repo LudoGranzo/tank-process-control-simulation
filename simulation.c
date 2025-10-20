@@ -6,11 +6,10 @@
 #include "types.h"
 #include "scenario_config.h"
     
-void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {   
+void update_tanks_volume(Tank *tanks, int num_tanks, Pump *pumps, int num_pumps, double deltaT, int *volume_reached) {    
     double volume_scopes[] = {TANK_SCOPE, TANK_SCOPE2}; // Array di volumi obiettivo dei serbatoi 
     static int initialized = 0; // Flag per inizializzazione una sola volta
-    static int concentration_pumps_opened = 0; // Apri pompe d'ingresso al primo passo se concentration abilitato
-    static int start = 0;
+    static int division_done = 0; // Flag per indicare se la divisione equa è completata
     
     // NOTE: STEP 0 (controllo pompe per la concentrazione) è stato spostato
     // in update_tank_concentration per separare i calcoli di volume da quelli
@@ -31,6 +30,7 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
     // le pompe di ingresso esterne verso i serbatoi così il sistema ha flusso
     // disponibile per i calcoli successivi (al "secondo 0").
 #ifdef MIN_CONCENTRATION
+    static int concentration_pumps_opened = 0; // Apri pompe d'ingresso al primo passo se concentration abilitato
     if (CONCENTRATION_ENABLED && !concentration_pumps_opened) {
         for (int p = 0; p < num_pumps; p++) {
             if (pumps[p].from_tank < 0 && pumps[p].to_tank >= 0) {
@@ -40,7 +40,6 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
         concentration_pumps_opened = 1;
     }
 #endif
-
     *volume_reached = 1; // Inizialmente si assume che il ciclo sia completato
     for (int i = 0; i < num_tanks; i++) {
         double inflow = 0.0;
@@ -58,14 +57,6 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
                 }
             }
             
-            if (VOLUME_ENABLED && CONCENTRATION_ENABLED && start) {
-                for (int p = 0; p < num_pumps; p++) {
-                    if ((pumps[p].to_tank == tanks[i].id) && (pumps[p].from_tank < 0)) {
-                        pumps[p].is_on = 1; // Attiva tutte le pompe di ingresso
-                    }
-                }
-                start = 1;
-            }
             
             for (int p = 0; p < num_pumps; p++) { //Considera le pompe in ingresso per riempire verso l'obiettivo
                 if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank < 0) {
@@ -128,7 +119,9 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
             }
 
         // **STEP 2: Scarico dopo aver raggiunto l'obiettivo - attiva pompe di scarico**
-        } else if (tanks[i].target_reached && tanks[i].volume > 0 && EMPTYING_ENABLED) {
+        // Se DIVISION_ENABLED è attivo, svuota solo dopo che la divisione è completata
+        } else if (tanks[i].target_reached && tanks[i].volume > 0 && EMPTYING_ENABLED && 
+                   (!DIVISION_ENABLED || division_done)) {
             *volume_reached = 0;
             // Attiva le pompe di scarico per questo serbatoio
             for (int p = 0; p < num_pumps; p++) {
@@ -175,9 +168,84 @@ void update_tanks_volume(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, 
         }
     }
 
+    // **FASE DIVISIONE**: Se tutti i tank hanno raggiunto il target e DIVISION_ENABLED è attivo
+    #ifdef DIVISION_ENABLED
+    if (*volume_reached && DIVISION_ENABLED && !division_done) {
+        // Attiva le pompe di collegamento per bilanciare i volumi
+        int all_balanced = 1;
+        
+        // Prima spegni tutte le pompe interne
+        for (int p = 0; p < num_pumps; p++) {
+            if (pumps[p].from_tank >= 0 && pumps[p].to_tank >= 0) {
+                pumps[p].is_on = 0;
+            }
+        }
+        
+        // Trova il serbatoio più pieno e quello più vuoto
+        int fullest_tank = 0;
+        int emptiest_tank = 0;
+        for (int i = 0; i < num_tanks; i++) {
+            if (tanks[i].volume > tanks[fullest_tank].volume) fullest_tank = i;
+            if (tanks[i].volume < tanks[emptiest_tank].volume) emptiest_tank = i;
+        }
+        
+        double diff = tanks[fullest_tank].volume - tanks[emptiest_tank].volume;
+        if (diff > 5.0) { // Tolleranza di 5.0 L (differenza tra i due)
+            all_balanced = 0;
+            *volume_reached = 0;
+            
+            // Attiva SOLO la pompa dal più pieno al più vuoto
+            for (int p = 0; p < num_pumps; p++) {
+                if (pumps[p].from_tank == tanks[fullest_tank].id && 
+                    pumps[p].to_tank == tanks[emptiest_tank].id) {
+                    pumps[p].is_on = 1;
+                    break; // Attiva solo una pompa
+                }
+            }
+        }
+        
+        // Calcola il nuovo volume per ogni tank
+        for (int i = 0; i < num_tanks; i++) {
+            double inflow_div = 0.0;
+            double outflow_div = 0.0;
+            
+            for (int p = 0; p < num_pumps; p++) {
+                if (!pumps[p].is_on) continue;
+                if (pumps[p].to_tank == tanks[i].id && pumps[p].from_tank >= 0) {
+                    inflow_div += pumps[p].max_flow;
+                }
+                if (pumps[p].from_tank == tanks[i].id && pumps[p].to_tank >= 0) {
+                    outflow_div += pumps[p].max_flow;
+                }
+            }
+            
+            tanks[i].volume += (inflow_div - outflow_div) * deltaT - EVAP_COEFF * tanks[i].volume;
+        }
+        
+        // Se tutti sono bilanciati, spegni le pompe interne e segna divisione completata
+        if (all_balanced) {
+            division_done = 1;
+            // Spegni tutte le pompe di collegamento
+            for (int p = 0; p < num_pumps; p++) {
+                if (pumps[p].from_tank >= 0 && pumps[p].to_tank >= 0) {
+                    pumps[p].is_on = 0;
+                }
+            }
+            // Se EMPTYING è abilitato, forza lo svuotamento
+            if (EMPTYING_ENABLED) {
+                *volume_reached = 0; // Forza il sistema a continuare
+                for (int i = 0; i < num_tanks; i++) {
+                    tanks[i].target_reached = 1; // Imposta flag per entrare nello svuotamento
+                }
+            }
+        }
+    }
+    #endif
+
 }
 
-void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *pumps, int num_pumps, double deltaT, int *concentration_reached, int *volume_reached) {
+void update_tank_concentration(Tank *tanks, int num_tanks, Pump *pumps, int num_pumps, double deltaT, int *concentration_reached, int *volume_reached) {
+    
     if (concentration_reached) *concentration_reached = 1;
 
     // **STEP 0: CONTROLLO POMPE PER LA CONCENTRAZIONE (spostato qui)**
@@ -352,7 +420,8 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Valve *valves, Pump *
     }
 }
 
-void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, double deltaT, int *temperature_reached) {
+void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, double deltaT, int *temperature_reached) {
+    
     int all_temps_ok = 1;
 
     for (int i = 0; i < num_tanks; i++) {
@@ -447,7 +516,8 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Valve *valve, Pump *pum
     if (temperature_reached) *temperature_reached = all_temps_ok;
 }
 
-void print_new_values(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, int t) {
+void print_new_values(Tank *tanks, int num_tanks, Pump *pumps, int num_pumps, Valve *pump_valves, Heater *heaters, int num_heaters, int t) {
+    
     printf("Time: %ds\n", t);
     for (int i = 0; i < num_tanks; i++) {
             if (tanks[i].volume > 0) {
@@ -456,14 +526,18 @@ void print_new_values(Tank *tanks, int num_tanks, Valve *valve, Pump *pumps, int
                 printf("TANK %d: V= %.2f L, C= %.2f\n", tanks[i].id, tanks[i].volume, tanks[i].concentration);
             }
     }
-    if (valve->is_on) 
-        printf("VALVE%d%d: OPEN\n", valve->from_tank, valve->to_tank);
-    else
-        printf("VALVE%d%d: CLOSE\n", valve->from_tank, valve->to_tank);
+    // Stampa lo stato delle pompe
     for (int i = 0; i < num_pumps; i++) {
-        printf("PUMP P%d%d:%s\n", 
-                pumps[i].from_tank, pumps[i].to_tank, 
-                pumps[i].is_on ? "ON" : "OFF");
+        printf("PUMP P%d%d:%s\n",
+               pumps[i].from_tank, pumps[i].to_tank,
+               pumps[i].is_on ? "ON" : "OFF");
+    }
+    // Stampa lo stato delle valvole associate alle pompe con lo stesso stile (es. VALVE V-11)
+    for (int i = 0; i < num_pumps; i++) {
+        printf("VALVE V%d%d: %s\n",
+               pump_valves[i].from_tank,
+               pump_valves[i].to_tank,
+               pump_valves[i].is_on ? "OPEN" : "CLOSED");
     }
     for (int h = 0; h < num_heaters; h++) {
         printf("HEATER%d:%s\n",

@@ -100,8 +100,9 @@
 
 // Abilitazioni funzionamenti
 #define VOLUME_ENABLED 1
-#define CONCENTRATION_ENABLED 0  
+#define CONCENTRATION_ENABLED 0 // Controllo concentrazione disabilitato
 #define TEMPERATURE_ENABLED 1
 #define EMPTYING_ENABLED 0       // Svuotamento disabilitato
+#define DIVISION_ENABLED 0       // Disabilitato il bilanciamento dei volumi
 
 #endif // SCENARIO2_H

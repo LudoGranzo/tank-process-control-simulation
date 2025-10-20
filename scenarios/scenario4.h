@@ -1,16 +1,16 @@
-#ifndef SCENARIO1_H
-#define SCENARIO1_H
+#ifndef SCENARIO4_H
+#define SCENARIO4_H
 
-// SCENARIO 1: Gestione di una fase batch con riempimento e scarico.
-// Il sistema deve riempire i serbatoi fino a un certo livello, miscelare, poi scaricare.
+// SCENARIO 4: Riempimento di un serbatoio e gestione della divisione del fluido tra i serbatoi con scarico.
+// Il sistema deve dividere equamente il fluido all'interno dei serbatoi, successivamente scaricare.
 // Le variazioni di concentrazione e temperatura sono visualizzate ma non è attivo il controllo (limitazione in range).
 
 // Valori di simulazione iniziali serbatoio 1
 #define ID 1 // Identificativo serbatoio
-#define INITIAL_VOLUME 0.0 // Volume iniziale gia presente nel serbatoio
-#define INITIAL_CONCENTRATION 0 // Valore di concentrazione liquido già presente nel serbatoio (0 perchè non c'è liquido).
+#define INITIAL_VOLUME 0.0 // Volume iniziale 
+#define INITIAL_CONCENTRATION 0.5 // Valore di concentrazione liquido già presente nel serbatoio (0 perchè non c'è liquido).
 #define CAPACITY 100.0 // Capacità MASSIMA del serbatoio
-#define TANK_SCOPE 100.0 // Volume obiettivo del serbatoio 
+#define TANK_SCOPE 100.0 // Volume obiettivo del serbatoio
 #define INITIAL_TEMPERATURE 23.0 // Valore di temperatura liquido già presente nel serbatoio
 #define TEMP_MIN1 22.0 // Valore MINIMO del range di temperatura
 #define TEMP_MAX1 25.0 // Valore MASSIMO del range di temperatura
@@ -20,7 +20,7 @@
 #define INITIAL_VOLUME2 0.0 // Volume iniziale gia presente nel serbatoio
 #define INITIAL_CONCENTRATION2 0.0 // Valore di concentrazione del liquido già presente nel serbatoio
 #define CAPACITY2 200.0 // Capacità MASSIMA del serbatoio
-#define TANK_SCOPE2 100.0 // Volume obiettivo del serbatoio
+#define TANK_SCOPE2 0.0 // Volume obiettivo del serbatoio
 #define INITIAL_TEMPERATURE2 26.0 // Valore di temperatura liquido già presente nel serbatoio
 #define TEMP_MIN2 25.0 // Valore MINIMO del range di temperatura
 #define TEMP_MAX2 28.0 // Valore MASSIMO del range di temperatura
@@ -28,13 +28,6 @@
 // Valori di temperature fluidi in ingresso
 #define INLET_TEMPERATURE1 23.0 // Temperatura fluidi in ingresso al TANK1
 #define INLET_TEMPERATURE2 26.0 // Temperatura fluidi in ingresso al TANK2
-
-// Valori di simulazione iniziali valvola 1
-#define VALVE_ID 1
-#define VALVE_FROM_TANK 1 // Serbatoio di partenza
-#define VALVE_TO_TANK 2 // Serbatoio di arrivo
-#define VALVE_MAX_FLOW 10.0 // Flusso massimo della valvola
-#define VALVE_IS_ON 0 // Stato iniziale della valvola (spenta)
 
 // Valori di simulazione iniziali prima pompa in ingresso al serbatoio 1
 #define PUMP_ID1 1 // Identificativo pompa numero 1
@@ -56,14 +49,14 @@
 #define PUMP_ID3 3 // Identificativo pompa numero 3
 #define PUMP_FROM_TANK3 1 // Serbatoio di partenza
 #define PUMP_TO_TANK3 2 // Serbatoio di arrivo
-#define PUMP_MAX_FLOW3 8.0 // Flusso massimo della pompa
+#define PUMP_MAX_FLOW3 3.0 // Flusso massimo della pompa
 #define PUMP_IS_ON3 0 // Stato iniziale della pompa (spenta)
 
 // Valori di simulazione iniziali pompa di collegamento tra tank2 e tank1
 #define PUMP_ID4 4 // Identificativo pompa numero 4
 #define PUMP_FROM_TANK4 2 // Serbatoio di partenza
 #define PUMP_TO_TANK4 1 // Serbatoio di arrivo
-#define PUMP_MAX_FLOW4 8.0 // Flusso massimo della pompa
+#define PUMP_MAX_FLOW4 3.0 // Flusso massimo della pompa
 #define PUMP_IS_ON4 0 // Stato iniziale della pompa (spenta)
 
 // Valori di simulazione pompa di scarico serbatoio 1
@@ -100,11 +93,11 @@
 #define EVAP_COEFF 0.001
 
 //Controlli scenario 1: Solo volume
-#define VOLUME_ENABLED 1      // Abilitato il controllo del volume
+#define VOLUME_ENABLED 1        // Abilitato il controllo del volume
 #define CONCENTRATION_ENABLED 0 // Abilitato il controllo della concentrazione
 #define TEMPERATURE_ENABLED 0   // Abilitato il controllo della temperatura
 #define EMPTYING_ENABLED 1      // Svuotamento abilitato
-#define DIVISION_ENABLED 0    // Disabilitato il bilanciamento dei volumi
+#define DIVISION_ENABLED 1      //divisione tra i serbatoi abilitato
 
-#endif // SCENARIO1_H
+#endif // SCENARIO4_H
 

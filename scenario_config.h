@@ -8,6 +8,8 @@
     #include "scenarios/scenario2.h"
 #elif defined SCENARIO_3
     #include "scenarios/scenario3.h"
+#elif defined SCENARIO_4
+    #include "scenarios/scenario4.h"
 #else
     //Scenario di default: Controllo di volume concentrazione e temperatura senza svuotamento 
 
@@ -113,9 +115,10 @@
     
     //Controlli scenario default
     #define VOLUME_ENABLED 1      // Abilitato il controllo del volume
-    #define CONCENTRATION_ENABLED 1 // Abilitato il controllo della concentrazione
-    #define TEMPERATURE_ENABLED 1   // Abilitato il controllo della temperatura
+    #define CONCENTRATION_ENABLED 0 // Controllo concentrazione disabilitato
+    #define TEMPERATURE_ENABLED 0   // Controllo temperatura disabilitato
     #define EMPTYING_ENABLED 0      // Svuotamento non abilitato
+    #define DIVISION_ENABLED 0      //divisione tra i serbatoi abilitato
     #endif
 
     #endif // SCENARIO_CONFIG_H

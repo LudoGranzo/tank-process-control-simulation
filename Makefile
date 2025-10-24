@@ -76,13 +76,13 @@ run_scenario4: $(TARGET_S4)
 
 # Test di tutti gli scenari
 test_all: all_scenarios
-	@echo "=== ESECUZIONE SCENARIO 1: Test Riempimento Veloce ==="
+	@echo "=== ESECUZIONE SCENARIO 1: Gestione di una fase batch con riempimento e scarico. ==="
 	./$(TARGET_S1) > results_scenario1.txt
-	@echo "=== ESECUZIONE SCENARIO 2: Test Stress Alta Evaporazione ==="
+	@echo "=== ESECUZIONE SCENARIO 2: Controllo termico di un processo sensibile ==="
 	./$(TARGET_S2) > results_scenario2.txt
-	@echo "=== ESECUZIONE SCENARIO 3: Test Precisione ==="
+	@echo "=== ESECUZIONE SCENARIO 3: Controllo della concentrazione con due fonti ==="
 	./$(TARGET_S3) > results_scenario3.txt
-	@echo "=== ESECUZIONE SCENARIO 4: Test Divisione e Svuotamento ==="
+	@echo "=== ESECUZIONE SCENARIO 4: Controllo divisione e svuotamento ==="
 	./$(TARGET_S4) > results_scenario4.txt
 	@echo "Tutti i test completati. Risultati salvati in results_scenarioX.txt"
 

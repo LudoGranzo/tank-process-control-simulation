@@ -7,8 +7,8 @@
 
 // Valori di simulazione iniziali serbatoio 1
 #define ID 1 // Identificativo serbatoio
-#define INITIAL_VOLUME 0.0 // Volume iniziale 
-#define INITIAL_CONCENTRATION 0.5 // Valore di concentrazione liquido già presente nel serbatoio (0 perchè non c'è liquido).
+#define INITIAL_VOLUME 0.0 // Volume iniziale
+#define INITIAL_CONCENTRATION 0.0 // Valore di concentrazione liquido già presente nel serbatoio (0 perchè non c'è liquido).
 #define CAPACITY 100.0 // Capacità MASSIMA del serbatoio
 #define TANK_SCOPE 100.0 // Volume obiettivo del serbatoio
 #define INITIAL_TEMPERATURE 23.0 // Valore di temperatura liquido già presente nel serbatoio

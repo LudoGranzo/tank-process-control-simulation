@@ -248,7 +248,7 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Pump *pumps, int num_
     
     if (concentration_reached) *concentration_reached = 1;
 
-    // **STEP 0: CONTROLLO POMPE PER LA CONCENTRAZIONE (spostato qui)**
+    // **STEP 0: CONTROLLO POMPE PER LA CONCENTRAZIONE **
     // Quando CONCENTRATION_ENABLED è attivo, alla prima chiamata di questa
     // funzione apriamo le pompe di ingresso (quelle con from_tank < 0) in modo
     // che i calcoli di concentrazione possano usare immediatamente tali flussi.
@@ -374,6 +374,14 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Pump *pumps, int num_
         // APPLICA SEMPRE LA FORMULA FISICA PER IL CALCOLO DELLA CONCENTRAZIONE
         // Ma SOLO se il serbatoio ha già del volume
         if (tanks[i].volume > 0.0) {
+            // Se il serbatoio ha raggiunto il volume obiettivo (target_reached),
+            // manteniamo la concentrazione al valore precedente per evitare una
+            // diluizione artificiale dovuta al fatto che le pompe possono essere
+            // state già spente durante l'aggiornamento del volume.
+            if (tanks[i].target_reached && TANK_SCOPE > 0 && TANK_SCOPE2 > 0) {
+                tanks[i].concentration = tanks[i].prev_concentration;
+                
+            } else {
             // Caso semplice richiesto: se siamo in fase di scarico puro (nessun inflow)
             // e lo scaricamento è abilitato, manteniamo la concentrazione costante
             // uguale alla concentrazione precedente.
@@ -386,10 +394,11 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Pump *pumps, int num_
                 // Formula di miscelazione originale: C(t+1) = [C(t)*V(t) + Σ Pin*Cin*Δt] / V(t+1)
                 tanks[i].concentration = (tanks[i].prev_concentration * tanks[i].prev_volume + sum_Pin_Cin_dt) / tanks[i].volume;
             }
-        } else {
+        }
+    } else {
             // Serbatoio vuoto: concentrazione = 0
             tanks[i].concentration = 0.0;
-        }
+    }
 
         // **FASE 2: SE CONTROLLO CONCENTRAZIONE DISABILITATO, STOP QUI**
         if (!CONCENTRATION_ENABLED) {
@@ -443,14 +452,21 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pu
         
         // CONTROLLO DEL RISCALDATORE
         double tmin = (t->id == 1) ? TEMP_MIN1 : TEMP_MIN2;
-        double tmax = (t->id == 1) ? TEMP_MAX1 : TEMP_MAX2;
-        double tmid = (tmin + tmax) / 2.0;
-        
+    double tmax = (t->id == 1) ? TEMP_MAX1 : TEMP_MAX2;
+
+#if defined(TEMPERATURE_ENABLED) && (TEMPERATURE_ENABLED == 0)
+        /* Il controllo della temperatura è disabilitato per questo scenario.
+           Eseguiamo comunque i calcoli (mixing termico, ecc.), ma NON
+           attiviamo mai il riscaldatore. Forziamo lo stato OFF per evitare
+           che venga applicata energia termica reale. */
+        current_heater->is_on = 0;
+#else
         if (t->temperature < tmin) {
             current_heater->is_on = 1;
-        } else if (t->temperature >= tmid) {
+        } else if (t->temperature >= (tmin + tmax) / 2.0) {
             current_heater->is_on = 0;
         }
+#endif
         
         // CALCOLA SEMPRE IL MIXING TERMICO (anche con heater OFF)
         double V_prev = t->volume;

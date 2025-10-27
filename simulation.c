@@ -430,7 +430,10 @@ void update_tank_concentration(Tank *tanks, int num_tanks, Pump *pumps, int num_
 }
 
 void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pumps, Heater *heaters, int num_heaters, double deltaT, int *temperature_reached) {
-    
+    if(TEMPERATURE_ENABLED == 0) {
+        *temperature_reached = 1;
+        return;
+    }
     int all_temps_ok = 1;
 
     for (int i = 0; i < num_tanks; i++) {
@@ -452,7 +455,7 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pu
         
         // CONTROLLO DEL RISCALDATORE
         double tmin = (t->id == 1) ? TEMP_MIN1 : TEMP_MIN2;
-    double tmax = (t->id == 1) ? TEMP_MAX1 : TEMP_MAX2;
+        double tmax = (t->id == 1) ? TEMP_MAX1 : TEMP_MAX2;
 
 #if defined(TEMPERATURE_ENABLED) && (TEMPERATURE_ENABLED == 0)
         /* Il controllo della temperatura è disabilitato per questo scenario.
@@ -490,6 +493,7 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pu
                 }
                 
                 double V_in = pumps[p].max_flow * deltaT;
+            
                 if (pumps[p].from_tank >= 0) {
                     for (int j = 0; j < num_tanks; j++) {
                         if (tanks[j].id == pumps[p].from_tank && V_in > tanks[j].volume) {
@@ -503,6 +507,17 @@ void update_tank_temperature(Tank *tanks, int num_tanks, Pump *pumps, int num_pu
                 weighted_temp_sum += temp_in * V_in;
             }
         }
+        // SE IL SERBATOIO HA RAGGIUNTO IL TARGET E IL RISCALDATORE È SPENTO
+        if (t->target_reached && !current_heater->is_on) {
+            t->temperature = t->prev_temperature; // Mantieni temperatura costante dopo aver raggiunto il target
+            continue;
+        }
+        // SE NON C'È FLUSSO IN INGRESSO E IL RISCALDATORE È SPENTO
+        if (total_volume_in == 0 && !current_heater->is_on) {
+            t->temperature = t->prev_temperature; // Mantieni la temperatura precedente se il riscaldatore è OFF
+            continue;
+        }
+        
         
         // Calcola V(t+1)
         double V_new = V_prev + total_volume_in - EVAP_COEFF * V_prev;

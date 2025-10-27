@@ -17,8 +17,8 @@
 
 // Valori di simulazione iniziali serbatoio 2
 #define ID2 2 // Identificativo serbatoio
-#define INITIAL_VOLUME2 0.0 // Volume iniziale gia presente nel serbatoio
-#define INITIAL_CONCENTRATION2 0.0 // Valore di concentrazione del liquido già presente nel serbatoio
+#define INITIAL_VOLUME2 150.0 // Volume iniziale gia presente nel serbatoio
+#define INITIAL_CONCENTRATION2 0.5 // Valore di concentrazione del liquido già presente nel serbatoio
 #define CAPACITY2 200.0 // Capacità MASSIMA del serbatoio
 #define TANK_SCOPE2 100.0 // Volume obiettivo del serbatoio
 #define INITIAL_TEMPERATURE2 26.0 // Valore di temperatura liquido già presente nel serbatoio
@@ -28,13 +28,6 @@
 // Valori di temperature fluidi in ingresso
 #define INLET_TEMPERATURE1 23.0 // Temperatura fluidi in ingresso al TANK1
 #define INLET_TEMPERATURE2 26.0 // Temperatura fluidi in ingresso al TANK2
-
-// Valori di simulazione iniziali valvola 1
-#define VALVE_ID 1
-#define VALVE_FROM_TANK 1 // Serbatoio di partenza
-#define VALVE_TO_TANK 2 // Serbatoio di arrivo
-#define VALVE_MAX_FLOW 10.0 // Flusso massimo della valvola
-#define VALVE_IS_ON 0 // Stato iniziale della valvola (spenta)
 
 // Valori di simulazione iniziali prima pompa in ingresso al serbatoio 1
 #define PUMP_ID1 1 // Identificativo pompa numero 1
@@ -96,15 +89,29 @@
 #define PUMP_IS_ON8 0 // Inizialmente spenta
 #define CONCENTRATION_IN8 0.6 // Concentrazione del secondo fluido entrante in TANK 2
 
+// Valori di simulazione iniziali riscaldatore serbatoio 1
+#define HEATER_ID1 1 // Identificativo riscaldatore
+#define HEATER_TANK_ID1 1 // Serbatoio associato
+#define HEATER_POWER1 200 // Potenza del riscaldatore in Watt
+#define HEATER_WATT_PER_DEGREE1 10 // Watt necessari per aumentare di 1 grado la temperatura del liquido
+#define HEATER_IS_ON1 0 // Stato iniziale del riscaldatore (spento)
+
+// Valori di simulazione iniziali riscaldatore serbatoio 2
+#define HEATER_ID2 2 // Identificativo riscaldatore
+#define HEATER_TANK_ID2 2 // Serbatoio associato
+#define HEATER_POWER2 200 // Potenza del riscaldatore in Watt
+#define HEATER_WATT_PER_DEGREE2 10 // Watt necessari per aumentare di 1 grado la temperatura del liquido
+#define HEATER_IS_ON2 0 // Stato iniziale del riscaldatore (spento)
+
 // Parametri del sistema
 #define EVAP_COEFF 0.001
 
 //Controlli scenario 1: Solo volume
-#define VOLUME_ENABLED 1      // Abilitato il controllo del volume
-#define CONCENTRATION_ENABLED 0 // Abilitato il controllo della concentrazione
-#define TEMPERATURE_ENABLED 0   // Abilitato il controllo della temperatura
-#define EMPTYING_ENABLED 1      // Svuotamento abilitato
-#define DIVISION_ENABLED 0    // Disabilitato il bilanciamento dei volumi
+#define VOLUME_ENABLED 1 // Abilitato il controllo del volume
+#define CONCENTRATION_ENABLED 0 // Disabilitato il controllo della concentrazione
+#define TEMPERATURE_ENABLED 0 // Disabilitato il controllo della temperatura
+#define EMPTYING_ENABLED 1 // Svuotamento abilitato
+#define DIVISION_ENABLED 0 // Disabilitato il bilanciamento dei volumi
 
 #endif // SCENARIO1_H
 

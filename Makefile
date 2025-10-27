@@ -14,9 +14,14 @@ TARGET_S1 = simulation_scenario1
 TARGET_S2 = simulation_scenario2  
 TARGET_S3 = simulation_scenario3
 TARGET_S4 = simulation_scenario4
+LOG_DIR = logs
 
 # Regola di default
 all: $(TARGET)
+
+# Crea la cartella log se non esiste
+$(LOG_DIR):
+	mkdir -p $(LOG_DIR)
 
 # Compilazione scenario di default (usa constants.h)
 $(TARGET): $(OBJECTS)
@@ -61,6 +66,9 @@ clean_objects:
 clean:
 	rm -f $(OBJECTS) $(TARGET) $(TARGET_S1) $(TARGET_S2) $(TARGET_S3) $(TARGET_S4)
 
+# Pulizia completa inclusi i log
+clean_all: clean
+	rm -rf $(LOG_DIR) results_scenario*.txt
 # Esecuzione rapida degli scenari
 run_scenario1: $(TARGET_S1)
 	./$(TARGET_S1)
@@ -75,16 +83,18 @@ run_scenario4: $(TARGET_S4)
 	./$(TARGET_S4)
 
 # Test di tutti gli scenari
-test_all: all_scenarios
+test_all: all_scenarios | $(LOG_DIR)
 	@echo "=== ESECUZIONE SCENARIO 1: Gestione di una fase batch con riempimento e scarico. ==="
-	./$(TARGET_S1) > results_scenario1.txt
+	./$(TARGET_S1) > $(LOG_DIR)/scenario1_output.log 2>&1 || true
 	@echo "=== ESECUZIONE SCENARIO 2: Controllo termico di un processo sensibile ==="
-	./$(TARGET_S2) > results_scenario2.txt
+	./$(TARGET_S2) > $(LOG_DIR)/scenario2_output.log 2>&1 || true
 	@echo "=== ESECUZIONE SCENARIO 3: Controllo della concentrazione con due fonti ==="
-	./$(TARGET_S3) > results_scenario3.txt
+	./$(TARGET_S3) > $(LOG_DIR)/scenario3_output.log 2>&1 || true
 	@echo "=== ESECUZIONE SCENARIO 4: Controllo divisione e svuotamento ==="
-	./$(TARGET_S4) > results_scenario4.txt
-	@echo "Tutti i test completati. Risultati salvati in results_scenarioX.txt"
+	./$(TARGET_S4) > $(LOG_DIR)/scenario4_output.log 2>&1 || true
+	@echo "Tutti i test completati. Risultati salvati nella cartella $(LOG_DIR)/"
+	@ls -la $(LOG_DIR)/
+
 
 # Aiuto
 help:
@@ -101,6 +111,7 @@ help:
 	@echo "  make run_scenario4    - Compila ed esegue scenario 4"
 	@echo "  make test_all         - Esegue tutti gli scenari e salva i risultati"
 	@echo "  make clean            - Pulisce i file compilati"
+	@echo "  make clean_all        - Pulisce tutto inclusi i log"
 	@echo "  make help             - Mostra questo aiuto"
 
-.PHONY: all scenario1 scenario2 scenario3 scenario4 all_scenarios clean clean_objects run_scenario1 run_scenario2 run_scenario3 run_scenario4 test_all help
+.PHONY: all scenario1 scenario2 scenario3 scenario4 all_scenarios clean clean_all clean_objects run_scenario1 run_scenario2 run_scenario3 run_scenario4 test_all help

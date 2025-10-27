@@ -34,13 +34,6 @@
 #define INLET_TEMPERATURE1 22.0  // Temperatura dei fluidi in ingresso al serbatoio 1
 #define INLET_TEMPERATURE2 22.0  // Temperatura dei fluidi in ingresso al serbatoio 2
 
-// Valvola (non utilizzata in questo scenario)
-#define VALVE_ID 1
-#define VALVE_FROM_TANK 1
-#define VALVE_TO_TANK 2
-#define VALVE_MAX_FLOW 0.0  // Disabilitata
-#define VALVE_IS_ON 0
-
 // Valori di simulazione iniziali prima pompa in ingresso al serbatoio 1
 #define PUMP_ID1 1 // Identificativo pompa
 #define PUMP_FROM_TANK1 -1 // Fonte esterna
@@ -101,15 +94,29 @@
 #define PUMP_MAX_FLOW6 0.0 // Disabilitata
 #define PUMP_IS_ON6 0 // Inizialmente spenta
 
+// Valori di simulazione iniziali riscaldatore serbatoio 1
+#define HEATER_ID1 1 // Identificativo riscaldatore
+#define HEATER_TANK_ID1 1 // Serbatoio associato
+#define HEATER_POWER1 200 // Potenza del riscaldatore in Watt
+#define HEATER_WATT_PER_DEGREE1 10 // Watt necessari per aumentare di 1 grado la temperatura del liquido
+#define HEATER_IS_ON1 0 // Stato iniziale del riscaldatore (spento)
+
+// Valori di simulazione iniziali riscaldatore serbatoio 2
+#define HEATER_ID2 2 // Identificativo riscaldatore
+#define HEATER_TANK_ID2 2 // Serbatoio associato
+#define HEATER_POWER2 200 // Potenza del riscaldatore in Watt
+#define HEATER_WATT_PER_DEGREE2 10 // Watt necessari per aumentare di 1 grado la temperatura del liquido
+#define HEATER_IS_ON2 0 // Stato iniziale del riscaldatore (spento)
+
 // Parametri del sistema
 #define EVAP_COEFF 0.001  // Coefficiente di evaporazione
 #define HEAT_CAPACITY_PER_L 4184.0
 
 // Controlli scenario 3 - Focus sulla concentrazione
-#define VOLUME_ENABLED 1          // Controllo volume abilitato
-#define CONCENTRATION_ENABLED 1   // CONTROLLO CONCENTRAZIONE PRINCIPALE
-#define TEMPERATURE_ENABLED 0     // Temperatura non critica in questo scenario
-#define EMPTYING_ENABLED 0        // Svuotamento disabilitato
-#define DIVISION_ENABLED 0    // Disabilitato il bilanciamento dei volumi
+#define VOLUME_ENABLED 1 // Abilitato il controllo del volume
+#define CONCENTRATION_ENABLED 1 // Abilitato il controllo della concentrazione
+#define TEMPERATURE_ENABLED 0 // Disabilitato il controllo della temperatura
+#define EMPTYING_ENABLED 0 // Disabilitato lo svuotamento
+#define DIVISION_ENABLED 0 // Disabilitato il bilanciamento dei volumi
 
 #endif // SCENARIO3_H

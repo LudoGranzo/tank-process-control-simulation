@@ -1,75 +1,62 @@
-# assegnamento_finale
+# Multi-Tank Process Control Simulation (C)
 
-Descrizione
------------
+Discrete-time simulation of an industrial multi-tank process with **volume, temperature and concentration control**, written in C99.
+Team project for the *Industrial Informatics Laboratory* (BSc Mechatronics Engineering, University of Padua, a.y. 2024/25).
 
-Questo progetto implementa una simulazione di serbatoi con più scenari di test. Il codice sorgente è scritto in C e permette di compilare diversi eseguibili, ognuno corrispondente a uno scenario specifico:
-- Scenario 1: Gestione di una fase batch con riempimento e scarico.
- Il sistema deve riempire i serbatoi fino a un certo livello, miscelare, poi scaricare.
- Le variazioni di concentrazione e temperatura sono visualizzate ma non è attivo il controllo (limitazione nel range).
-- Scenario 2: Controllo termico di un processo sensibile.
- I serbatoi devono mantenere la temperatura entro un certo range.  I fluidi in ingresso sono più freddi, quindi i riscaldatori devono attivarsi per mantenere la temperatura. L'obiettivo è sia evitare raffreddamento eccessivo sia sovratemperatura.
-- Scenario 3: Controllo della concentrazione con due fonti.
- I serbatoi vengono alimentati costantemente da due fonti con diverse concentrazioni. L'obiettivo è raggiungere il volume scopo, mantenere il volume (a meno di perdite dovute al coefficiente di evaporazione) e nel frattempo mantenere la concentrazione entro il range specificato. Il sistema deve decidere quale pompa attivare in modo da mantenere la concentrazione entro il range desiderato.
-- Scenario 4: Riempimento di un serbatoio e gestione della divisione del fluido tra i serbatoi con  scarico. 
- Il sistema deve dividere equamente il fluido all'interno dei serbatoi, successivamente scaricare. Le variazioni di concentrazione e temperatura sono visualizzate ma non è attivo il controllo (limitazione nel range).
+**Team:** Ludovico Granzotto, Simone Cordioli — all parts developed jointly (process model, control logic, build/test setup).
 
-Struttura dei file
-------------------
+---
 
-- `main.c` - Punto di ingresso del programma.
-- `simulation.c` - Logica della simulazione.
-- `scenarios/` - Directory contenente eventuali header o file di configurazione per gli scenari (inclusa tramite `-Iscenarios` nel Makefile).
-- `Makefile` - Script di compilazione che fornisce target per compilare e lanciare ciascuno scenario.
+## What it does
 
-Requisiti
----------
+The plant is made of two tanks connected by pumps and valves, fed by external sources and equipped with heaters. At every time step the program:
 
-- GCC (o altro compilatore compatibile C) installato.
-- Ambiente Linux/Unix con `make` disponibile.
-- (Opzionale) Strumenti di debug come `gdb` se `CFLAGS` include `-g`.
+1. **updates the process model** – mass balance with pump flows and evaporation, mixing equations for concentration and temperature:
+   - `V(t+1) = V(t) + (Q_in − Q_out)·Δt − k_evap·V(t)`
+   - `C(t+1) = [C(t)·V(t) + Σ Q_in·C_in·Δt] / V(t+1)`
+   - `T(t+1) = [T(t)·V(t) + Σ Q_in·T_in·Δt + Q_heat·Δt] / V(t+1)`
+2. **runs the control logic** – decides which pumps, valves and heaters are ON/OFF;
+3. **prints the plant state** (volumes, concentrations, temperatures, actuator states).
 
-Istruzioni di compilazione
--------------------------
+## Scenarios
 
-Il progetto include un `Makefile` con i seguenti target principali:
+The same source code is compiled into four executables; each scenario is selected with a preprocessor macro (`-DSCENARIO_X`).
 
-- `make` o `make all` - Compila l'eseguibile di default `simulation`.
-- `make scenario1` - Compila l'eseguibile `simulation_scenario1` con la macro `SCENARIO_1` attivata (Test Riempimento Veloce).
-- `make scenario2` - Compila l'eseguibile `simulation_scenario2` con la macro `SCENARIO_2` attivata (Test Stress Alta Evaporazione).
-- `make scenario3` - Compila l'eseguibile `simulation_scenario3` con la macro `SCENARIO_3` attivata (Test Precisione).
-- `make scenario4` - Compila l'eseguibile `simulation_scenario4` con la macro `SCENARIO_4` attivata (Test Divisione e Svuotamento).
-- `make all_scenarios` - Compila tutti gli eseguibili degli scenari.
-- `make run_scenario1|run_scenario2|run_scenario3|run_scenario4` - Compila (se necessario) ed esegue lo scenario selezionato.
-- `make test_all` - Compila tutti gli scenari, li esegue in sequenza e salva l'output rispettivamente in `results_scenario1.txt`, `results_scenario2.txt`, `results_scenario3.txt` e `results_scenario4.txt`.
-- `make clean` - Rimuove gli oggetti compilati e gli eseguibili generati.
+| # | Scenario | Control objective |
+|---|----------|-------------------|
+| 1 | **Batch fill & discharge** | Fill the tanks to the target level, mix, then empty them. Concentration and temperature are monitored. |
+| 2 | **Thermal control** | Inlet fluids are colder than the process: heaters use on/off control with hysteresis to keep each tank inside its temperature band, avoiding both under- and over-temperature. |
+| 3 | **Concentration control with two sources** | Each tank is fed by two sources with different concentrations. The controller selects which inlet pump to run to reach the target volume while keeping the concentration within its range (evaporation losses included). |
+| 4 | **Fluid splitting & emptying** | One tank is filled, then a transfer pump balances the volume between the two tanks (5 L tolerance) before both are emptied. |
 
-Esempi di comandi
------------------
+## Project structure
 
-Compilare lo scenario di default:
-
-```bash
-make
+```
+main.c              entry point and simulation loop
+simulation.c        process model and control logic
+simulation.h        function prototypes
+types.h             data types (Tank, Pump, Valve, Heater)
+constants.h         shared constants
+scenario_config.h   selects the active scenario configuration
+scenarios/          per-scenario configuration headers
+Makefile            build, run and test targets
+test_scenarios.sh   interactive script to build, run and compare scenarios
 ```
 
-Compilare ed eseguire lo scenario 1 (riempimento veloce):
+## Build & run
+
+Requirements: GCC (C99) and `make` on Linux/Unix.
 
 ```bash
-make run_scenario1
+make                 # default build
+make run_scenario1   # build and run one scenario (1–4)
+make all_scenarios   # build all four executables
+make test_all        # run every scenario and save results_scenarioX.txt
+make clean
 ```
 
-Compilare tutti gli scenari e salvare i risultati:
+Compiler flags: `-Wall -Wextra -std=c99 -g`.
 
-```bash
-make test_all
-```
+## Skills involved
 
-Note tecniche
--------------
-
-- Il `Makefile` usa la variabile `CFLAGS` per definire flag di compilazione (`-Wall -Wextra -std=c99 -g`).
-- Per ogni scenario, il Makefile aggiunge una macro di preprocessore (`-DSCENARIO_X`) prima della compilazione per abilitare il comportamento specifico nello stesso codice sorgente.
-- Il target `clean_objects` rimuove solo i file oggetto `.o` per evitare conflitti quando si ricompilano eseguibili con macro diverse.
-
-# assegnamento_finale
+C programming · discrete-time process modelling · on/off and hysteresis control · actuator logic (pumps, valves, heaters) · conditional compilation · Makefile · Git team workflow

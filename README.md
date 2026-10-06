@@ -1,6 +1,6 @@
 # Multi-Tank Process Control Simulation (C)
 
-Discrete-time simulation of an industrial multi-tank process with **volume, temperature and concentration control**, written in C99.
+Discrete-time simulation of an industrial multi-tank process with **volume, temperature and concentration control**, written in C.
 Team project for the *Industrial Informatics Laboratory* (BSc Mechatronics Engineering, University of Padua, a.y. 2024/25).
 
 **Team:** Ludovico Granzotto, Simone Cordioli — all parts developed jointly (process model, control logic, build/test setup).
